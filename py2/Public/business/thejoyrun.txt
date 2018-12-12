@@ -1,0 +1,866 @@
+*** Settings ***
+Library           Collections
+Library           RequestsLibrary
+Library           pymysql
+Library           DatabaseLibrary
+Library           String
+Library           HttpLibrary.HTTP
+Library           ../Lib/tool_reptile.py
+Library           ../Lib/tools_library.py
+Resource          ../OtherMethod/cookie_operation.txt
+Resource          ../Public/http_request.txt
+
+*** Variables ***
+${signOnline}     A4729E62-3701-48C3-A15D-7391838FA186    #可以放置一些公共参数；
+${signTest}       a9ff6970eb814e6894389ca8b12f3030    #可以放置一些公共参数；
+${pwd}            67889911    #可以放置一些公共参数；
+${usersinfo_dict}    &{EMPTY}
+${Goltimestamp}    0
+${RetryInti}      ${3}    #设置重试次数
+
+*** Keywords ***
+Gettimes
+    [Arguments]    ${fields}
+    [Documentation]    根据入参和当前时间输出处理后的相应时间格式，times输出时间戳格式；yy以年运算，MM以月运算，dd以天运算，hh以时运算，mm以分运算，ss以秒运算；ctime输出Wed Mar 21 10:36:38 2018 格式的时间； 第1、2个参数为时间运算粒度，第3个参数为输出格式,参数与参数之间用英文逗号隔开；例如：dd,+5,times 为输出当前时间的5天后的时间戳，注意：以月运算和以年运算分别是以30天和365天进行运算；
+    log    Gettimes Start ......
+    log    入参为：${fields}
+    @{fieldslist}    Split String    ${fields}    ,
+    ${fieldfiler}    Get From List    ${fieldslist}    0
+    ${fieldnum}    Get From List    ${fieldslist}    1
+    ${returnfield}    Get From List    ${fieldslist}    2
+    ${localtime}=    Get Time    epoch
+    ${localtimes}    Evaluate    long(${localtime})
+    ${localctime}    Evaluate    time.ctime(${localtimes})    time,datetime
+    ${lyy}    ${lmm}    ${ldd}    ${lhour}    ${lmin}    ${lsec}    Get Time
+    ...    year,month,day,hour,min,sec
+    ${times}    Run Keyword If    '${fieldfiler}'=='yy'    Evaluate    ${localtimes}+${fieldnum}*3600*24*365
+    ...    ELSE IF    '${fieldfiler}'=='MM'    Evaluate    ${localtimes}+${fieldnum}*3600*24*30
+    ...    ELSE IF    '${fieldfiler}'=='dd'    Evaluate    ${localtimes}+${fieldnum}*3600*24
+    ...    ELSE IF    '${fieldfiler}'=='hh'    Evaluate    ${localtimes}+${fieldnum}*3600
+    ...    ELSE IF    '${fieldfiler}'=='mm'    Evaluate    ${localtimes}+${fieldnum}*60
+    ...    ELSE IF    '${fieldfiler}'=='ss'    Evaluate    ${localtimes}+${fieldnum}
+    ...    ELSE    set variable    ${localtimes}
+    ${ctime}    Evaluate    time.ctime(${times})    time,datetime
+    ${retime}    Run Keyword If    '${returnfield}'=='ctime'    set variable    ${ctime}
+    ...    ELSE    set variable    ${times}
+    log    本地时间：${localctime}===${localtimes}，处理后的时间：${ctime}=====${times}
+    log    Gettimes End ......
+    [Return]    ${retime}
+
+Removesting
+    [Arguments]    ${srcstring}    ${movestr}    ${spitsting}
+    [Documentation]    从源字符串中删除某些字符串，如：123,abc,1234,444,eee 中删除abc,eee 两个字符串的分割符需要一致，${srcstring} 源字符串，${movestr}为需要删除的字符串， ${spitsting} 为两个字符串的分割符；
+    log    Removesting Start ......
+    log    原字符串${srcstring}
+    log    需要移除${movestr}
+    log    分割符${spitsting}
+    @{moveList}    Split String    ${movestr}    ${spitsting}
+    ${movestrlen}    evaluate    len(${moveList})
+    : FOR    ${movesting}    IN    @{moveList}
+    \    ${srcstring}    replace string    ${srcstring}    ${spitsting}${spitsting}    ${spitsting}
+    \    ${srcstring}=    Remove String    ${srcstring}    ${movesting}${spitsting}
+    \    ${srcstring}=    Remove String    ${srcstring}    ${spitsting}${movesting}
+    \    ${srcstring}=    Remove String    ${srcstring}    ${movesting}
+    \    ${srcstring}    replace string    ${srcstring}    ${spitsting}${spitsting}    ${spitsting}
+    ${restr}    Run Keyword If    '${srcstring}'=='${spitsting}'    set variable    ${EMPTY}
+    ...    ELSE    set variable    ${srcstring}
+    log    Removesting End ......
+    [Return]    ${restr}
+
+FilterList
+    [Arguments]    ${SrcListstr}    ${filters}    ${Returnfield}    ${Onlyone}=None    ${Num}=None
+    [Documentation]    *筛选并分隔字符串*
+    ...    支持1-3个条件的筛选记录,有则返回value1,value2,...,否则返回0；
+    ...    SrcListstr 为源字符串(需要符合[{"a":1,"b":2,"c":3},{"a":12,"b":22,"c":33},{"a":11,"b":12,"c":13,"d":13}])；
+    ...    filters为筛选条件：格式为field1,1,2/field2,3,4(筛选字符与值之间用逗号分隔，筛选字段之间用/分隔);
+    ...    Returnfield为返回值串的字符,为All返回所有字段；
+    ...    Onlyone以哪个字段或字符串来分隔，默认为空；
+    ...    Num源数据列表的条数筛选，默认为空不筛选； 大于0的数时筛选前Num列【0:Num】,小于0的数时筛选倒数Num列【Num:Last】
+    ...    例如从源字符串[{"fid":123,"uid": 2315,"meter1": 2315},{"fid":2123,"uid": 23151,"meter1": 22315},{"fid":1423,"uid": 23152,"meter1": 2315,"meter2": 23415},{"fid":2123,"uid": 24315,"meter1": 23415}] 中对fid、uid、meter1、meter2条件筛选符合的记录
+    [Timeout]    1 minute
+    log    FilterList Start ......
+    log    原字符串:${SrcListstr}
+    log    筛选条件:${filters}
+    log    返回值串的字段:${Returnfield}
+    log    分隔串的字段:${Onlyone}
+    log    源数据列表的条数筛选${Num}
+    ${ReturnValue}    set variable    joyrunzzqtestspit
+    @{filterList}    Split String    ${filters}    /
+    ${filterLen}    evaluate    len(${filterList})
+    ${filterstr1}    Get From List    ${filterList}    0
+    ${filterstr2}    Run Keyword If    ${filterLen}>1    Get From List    ${filterList}    1
+    ...    ELSE    Get From List    ${filterList}    0
+    ${filterstr3}    Run Keyword If    ${filterLen}>2    Get From List    ${filterList}    2
+    ...    ELSE    Get From List    ${filterList}    0
+    @{filterstrList1}    Split String    ${filterstr1}    ,
+    @{filterstrList2}    Split String    ${filterstr2}    ,
+    @{filterstrList3}    Split String    ${filterstr3}    ,
+    ${filterfield1}    Get From List    ${filterstrList1}    0
+    ${filterfield2}    Get From List    ${filterstrList2}    0
+    ${filterfield3}    Get From List    ${filterstrList3}    0
+    ${filterfield1min}    Get From List    ${filterstrList1}    1
+    ${filterfield2min}    Get From List    ${filterstrList2}    1
+    ${filterfield3min}    Get From List    ${filterstrList3}    1
+    ${filterfield1max}    Get From List    ${filterstrList1}    2
+    ${filterfield2max}    Get From List    ${filterstrList2}    2
+    ${filterfield3max}    Get From List    ${filterstrList3}    2
+    ##兼容字段值带引号的情况
+    ${SrcListstr}    replace string    ${SrcListstr}    ${EMPTY}[{    {
+    ${SrcListstr}    replace string    ${SrcListstr}    }]${EMPTY}    }
+    ${SrcListstr}    replace string    ${SrcListstr}    ${SPACE}    ${EMPTY}
+    ${SrcListstr}    Run Keyword If    ${Onlyone}==None    replace string    ${SrcListstr}    },{    }joyrunzzqtestspit{
+    ...    ELSE    replace string    ${SrcListstr}    ${Onlyone}    ${Onlyone}joyrunzzqtestspit${Onlyone}
+    @{SrcList}    Split String    ${SrcListstr}    joyrunzzqtestspit
+    ${SrcList}    Run Keyword If    ${Num} is None    Get Slice From List    ${SrcList}    -10
+    ...    ELSE IF    ${Num}>0    Get Slice From List    ${SrcList}    0    ${Num}
+    ...    ELSE IF    ${Num}<0    Get Slice From List    ${SrcList}    ${Num}
+    ...    ELSE    Get Slice From List    ${SrcList}    0
+    : FOR    ${scr_single}    IN    @{SrcList}
+    \    ${scrsingle}    set variable    ${scr_single}
+    \    ${scrsingle}    replace string    ${scrsingle}    ${filterfield1}":${SPACE}    ${filterfield1}":
+    \    ${scrsingle}    replace string    ${scrsingle}    ${filterfield1}":"    ${filterfield1}":
+    \    log    filterfield1----${scrsingle}
+    \    ${scrsingle}    replace string    ${scrsingle}    ${filterfield2}":${SPACE}    ${filterfield2}":
+    \    ${scrsingle}    replace string    ${scrsingle}    ${filterfield2}":"    ${filterfield2}":
+    \    log    filterfield2----${scrsingle}
+    \    ${scrsingle}    replace string    ${scrsingle}    ${filterfield3}":${SPACE}    ${filterfield3}":
+    \    ${scrsingle}    replace string    ${scrsingle}    ${filterfield3}":"    ${filterfield3}":
+    \    log    filterfield3----${scrsingle}
+    \    ${scrsingle}    replace string    ${scrsingle}    ${Returnfield}":${SPACE}    ${Returnfield}":
+    \    ${scrsingle}    replace string    ${scrsingle}    ${Returnfield}":"    ${Returnfield}":
+    \    log    Returnfield----${scrsingle}
+    \    ${filterfield1str}    Get Regexp Matches    ${scrsingle}    "${filterfield1}":([A-Za-z0-9]+)    1
+    \    ${filterfield1strlen}    evaluate    len(${filterfield1str})
+    \    ${field1Value}    Run Keyword If    ${filterfield1strlen}>0    Get From List    ${filterfield1str}    0
+    \    ...    ELSE    set variable    0
+    \    ${filterfield2str}    Get Regexp Matches    ${scrsingle}    "${filterfield2}":([A-Za-z0-9]+)    1
+    \    ${filterfield2strlen}    evaluate    len(${filterfield2str})
+    \    ${field2Value}    Run Keyword If    ${filterfield2strlen}>0    Get From List    ${filterfield2str}    0
+    \    ...    ELSE    set variable    0
+    \    ${filterfield3str}    Get Regexp Matches    ${scrsingle}    "${filterfield3}":([A-Za-z0-9]+)    1
+    \    ${filterfield3strlen}    evaluate    len(${filterfield3str})
+    \    ${field3Value}    Run Keyword If    ${filterfield3strlen}>0    Get From List    ${filterfield3str}    0
+    \    ${Returnfieldstr}    Get Regexp Matches    ${scrsingle}    "${Returnfield}":([A-Za-z0-9]+)    1
+    \    ${Returnfieldstrlen}    evaluate    len(${Returnfieldstr})
+    \    ${ReturnfieldValue1}    Run Keyword If    ${Returnfieldstrlen}>0    Get From List    ${Returnfieldstr}    0
+    \    ...    ELSE    set variable    ${EMPTY}
+    \    ${field1Value}    Run Keyword If    '${field1Value}'=='null'    set variable    -1
+    \    ...    ELSE    set variable    ${field1Value}
+    \    ${field2Value}    Run Keyword If    '${field2Value}'=='null'    set variable    -1
+    \    ...    ELSE    set variable    ${field2Value}
+    \    ${field3Value}    Run Keyword If    '${field3Value}'=='null'    set variable    -1
+    \    ...    ELSE    set variable    ${field3Value}
+    \    ${ReturnfieldValue}    Run Keyword If    "${Returnfield}"<>"All" and ${filterfield1min}<=${field1Value}<=${filterfield1max} and ${filterfield2min}<=${field2Value}<=${filterfield2max} and ${filterfield3min}<=${field3Value}<=${filterfield3max}    set variable    ${ReturnfieldValue1}
+    \    ...    ELSE IF    "${Returnfield}"=="All" and ${filterfield1min}<=${field1Value}<=${filterfield1max} and ${filterfield2min}<=${field2Value}<=${filterfield2max} and ${filterfield3min}<=${field3Value}<=${filterfield3max}    set variable    ${scr_single}
+    \    ...    ELSE    set variable    joyrunzzqtestspit
+    \    ${Valuelen}    Evaluate    len(R'${ReturnValue}')
+    \    ${ReturnValue}    Run Keyword If    "${Returnfield}"<>"All" and ${Valuelen}>=1    set variable    ${ReturnValue},${ReturnfieldValue}
+    \    ...    ELSE IF    "${Returnfield}"<>"All" and ${Valuelen}<1    set variable    ${ReturnfieldValue}
+    \    ...    ELSE    set variable    ${ReturnValue}zzqtestlistspit${ReturnfieldValue}
+    \    ${ReturnValue}    replace string    ${ReturnValue}    ,joyrunzzqtestspit    ${EMPTY}
+    \    ${ReturnValue}    replace string    ${ReturnValue}    joyrunzzqtestspit,    ${EMPTY}
+    \    ${ReturnValue}    replace string    ${ReturnValue}    joyrunzzqtestspit    ${EMPTY}
+    ${ReturnValuelen}    Evaluate    len(R'${ReturnValue}')
+    ${ReturnValuesting}    Run Keyword If    ${ReturnValuelen}<1    set variable    0
+    ...    ELSE    set variable    ${ReturnValue}
+    @{returnlist}    Run Keyword If    "${Returnfield}"=="All"    Split String    ${ReturnValuesting}    zzqtestlistspit
+    ...    ELSE    Create List
+    Remove Values From List    ${returnlist}    ${EMPTY}
+    ${returnlistlen}    Evaluate    len(${returnlist})
+    @{returnlist}    Run Keyword If    ${returnlistlen}<1    Create List    0
+    ...    ELSE    Create List    @{returnlist}
+    log    FilterList End ......
+    Run Keyword If    "${Returnfield}"=="All"    Return From Keyword    @{returnlist}
+    ...    ELSE    Return From Keyword    ${ReturnValuesting}
+
+callkeywords
+    [Arguments]    ${str}    ${type}=None
+    [Documentation]    按顺序执行多个关键字,并返回每个关键的执行结果，str输入方法为关键字之前用分号（;）隔开，关键字与传参之间用冒号（：）隔开，比如：Getmyclassid:${userName};Getmywallet:${userName}:balanceAmount 这个是执行两个关键字(Getmyclassid,Getmywallet)，每个关键字的冒号后为传参；
+    [Timeout]    30 seconds
+    log    callkeywords Start ......
+    @{result}    Create List
+    @{keywordslist}=    Split String    ${str}    ;
+    : FOR    ${keywordvalue}    IN    @{keywordslist}
+    \    @{keywordlists}    Split String    ${keywordvalue}    :
+    \    ${keyword}    Get From List    ${keywordlists}    0
+    \    ${keywordinput}    replace string    ${keywordvalue}    ${keyword}:    ${EMPTY}
+    \    @{input}    Split String    ${keywordinput}    :
+    \    ${keywordresult}    Run Keyword    ${keyword}    @{input}
+    \    Append To List    ${result}    ${keywordresult}
+    log    callkeywords End ......
+    [Return]    ${result}
+
+Getsting
+    [Arguments]    ${string}    ${str}
+    [Documentation]    将字典类型的字符串取出相应key的值,比如字符串{"source": "", "second": 311, "meter": 1017}中取出meter的值
+    log    Getsting Start ......
+    ${intstart}    evaluate    ${string}[${str}]
+    log    Getsting End ......
+    [Return]    ${intstart}
+
+randomchoice
+    [Arguments]    ${str}    ${spitstr}
+    [Documentation]    将字符串分割后随机返回 abcdef;12;aaaa;123ewq;ddd 以;分割随机返回${str}为源字符串，${spitstr}为源字符串中的分割符；
+    log    randomchoice Start ......
+    @{list}=    Split String    ${str}    ${spitstr}
+    ${stinglen}    evaluate    len(${list})
+    ${strReturn}    evaluate    random.choice(${list})    random
+    log    ======共${stinglen}数据，随机选中：${strReturn}========
+    log    randomchoice End ......
+    [Return]    ${strReturn}
+
+choiceOrd
+    [Arguments]    ${str}    ${ords}    ${spitstr}=None
+    [Documentation]    将字符串分割后按序号返回 abcdef;12;aaaa;123ewq;ddd 以;分割随机返回${str}为源字符串，${spitstr}为源字符串中的分割符（，为默认分隔符）；ords为序号，大于0时，按序号返回，1返第1个值，小于0时，按倒序返回，-1为返回最后一个值，当为0时，即为随机返回一个值；注意分隔符在源字符串仅作分隔符用，正常的值不能有分隔符；
+    log    choiceOrd Start ......
+    #log    spitstr======${spitstr};'${spitstr}'=='None'
+    @{choicelist}    Run keyword If    '${spitstr}'=='None'    Split String    ${str}    ,
+    ...    ELSE    Split String    ${str}    ${spitstr}
+    ${stinglen}    evaluate    len(${choicelist})
+    ${ordMax}    evaluate    len(${choicelist})-1
+    ${ord}    evaluate    ${ords}-1
+    ${strReturn}    Run keyword If    ${stinglen}>0 and ${ords}>=${stinglen}    Get From List    ${choicelist}    ${ordMax}
+    ...    ELSE IF    ${stinglen}>0 and ${ords}<${stinglen} and ${ords}==0    randomchoice    ${str}    ${spitstr}
+    ...    ELSE IF    ${stinglen}>0 and ${ords}<${stinglen} and ${ords}>0    Get From List    ${choicelist}    ${ord}
+    ...    ELSE IF    ${stinglen}>0 and ${ords}<${stinglen} and ${ords}<0    Get From List    ${choicelist}    ${ords}
+    ...    ELSE    Set variable    ${EMPTY}
+    Run keyword If    ${ords}>0    log    总共${stinglen}组数据,选中第${ords}组,数据为：${strReturn}
+    ...    ELSE IF    ${ords}<0    log    总共${stinglen}组数据,选中倒数第${ords}组,数据为：${strReturn}
+    log    choiceOrd End ......
+    [Return]    ${strReturn}
+
+stringtolist
+    [Arguments]    ${input}
+    log    stringtolist Start ......
+    ${list}=    set variable    ${input}
+    ${list}=    replace string    ${list}    {    ${EMPTY}
+    ${list}=    replace string    ${list}    }    ${EMPTY}
+    ${list}=    replace string    ${list}    "    ${EMPTY}
+    @{list}=    Split String    ${list}    ,
+    log    stringtolist End ......
+    [Return]    @{list}
+
+format listtostring
+    [Arguments]    @{list}
+    [Documentation]    将List变量(List的单个值是字典)按顺序串联成字符串，例如变量值[(u'a', u'123'),(u'b', u'456')]换成a123b456,
+    log    format listtostring Start ......
+    ${listtostring}=    set variable    ${EMPTY}
+    ${len}=    evaluate    len(${list})
+    : FOR    ${index}    IN RANGE    ${len}
+    \    ${string}    evaluate    "".join(${list[${index}]})
+    \    ${listtostring} =    set variable    ${listtostring}${string}
+    log    format listtostring End ......
+    [Return]    ${listtostring}
+
+arraytostring
+    [Arguments]    ${array}
+    [Documentation]    将字符类型改为数组类型，例如变量值"[a,b c]" 换成[a,b,c]
+    log    arraytostring Start ......
+    ${list}=    evaluate    "".join(${array})
+    log    arraytostring End ......
+    [Return]    ${list}
+
+listtolist
+    [Arguments]    ${a}    ${b}
+    [Documentation]    将字符类型改为数组类型[aa,bb] 与[cc,dd] 合并成[aa,bb,cc,dd] ,${a} ${b}为list类型变量@{a}@{b}
+    log    listtolist Start ......
+    log    =====合并数组listtolist=========
+    ${lena}=    evaluate    len(${a})
+    ${lenb}=    evaluate    len(${b})
+    ${listasting}=    set variable    abcdefg19527egthejoyrun9898
+    ${listbsting}=    set variable    abcdefg19527egthejoyrun9898
+    : FOR    ${indexa}    IN RANGE    0    ${lena}
+    \    ${lista1}    set variable    ${a[${indexa}]}
+    \    ${listasting}=    set variable    ${listasting},${lista1}
+    : FOR    ${indexb}    IN RANGE    0    ${lenb}
+    \    ${listb1}    set variable    ${b[${indexb}]}
+    \    ${listbsting}=    set variable    ${listbsting},${listb1}
+    ${abstring}    set variable    ${listasting},${listbsting}
+    ${abstring}=    replace string    ${abstring}    abcdefg19527egthejoyrun9898,    ${EMPTY}
+    ${abstring}    set variable    [${abstring}]
+    log    listtolist End ......
+    [Return]    ${abstring}
+
+countbyitem
+    [Arguments]    ${content}    ${item}    ${attribute}
+    [Documentation]    检查每个分类返回的数据个数
+    log    countbyitem Start ......
+    ${dict}=    Evaluate    json.dumps(${content})    json
+    ${jkey}=    Evaluate    ${dict}.get('data').get('${item}')    json
+    ${jkey}=    Convert To String    ${jkey}
+    ${count}    Get Count    ${jkey}    ${attribute}
+    log    countbyitem End ......
+    [Return]    ${count}
+
+GetServertime
+    [Arguments]    ${login_URL}
+    [Documentation]    获取服务端的时间
+    log    GetServertime Start ......
+    ${time}=    Get Time    epoch
+    log    time= ${time}
+    ${isend}    evaluate    int(${time})-${Goltimestamp}-280
+    Run Keyword If    ${isend}>=0    Create Session    timestamp    ${login_URL}
+    ${resptime}    Run Keyword If    ${isend}>=0    RequestsLibrary.Get Request    timestamp    /GetTimestamp.aspx
+    ${contentime}    Run Keyword If    ${isend}>=0    charconver    ${resptime.content}
+    Run Keyword If    ${isend}>=0    log json    ${resptime.content}
+    ${timestamp}    Run Keyword If    ${isend}>=0    get json value    ${contentime}    /lasttime
+    ...    ELSE    set variable    ${Goltimestamp}
+    set global variable    ${Goltimestamp}    ${timestamp}
+    log    GetServertime End ......
+    [Return]    ${timestamp}
+
+Env_URL
+    [Arguments]    ${InputURL}
+    [Documentation]    根据URL判断运行环境
+    log    Env_URL Start ......
+    ${Testcount}    Get Lines Matching Pattern    ${InputURL}    *-test*
+    ${env_out}    Run Keyword If    '${Testcount}'=='${EMPTY}'    set variable    Online
+    ...    ELSE    set variable    Test
+    log    Env_URL End ......
+    [Return]    ${env_out}
+
+thejoyrun_postd
+    [Arguments]    ${path}    ${maps}    ${userName}    ${Base_URL}    ${pwds}=None    ${Retry}=None
+    [Documentation]    *用于APP内部需要登录和签名Post场景：post请求data方式关键字*
+    ...
+    ...    参数以data方法提交，不出现Url中，而只在body中带公共参数（sign、timestamp）；
+    [Timeout]    30 seconds
+    log    thejoyrun_postd Start ......
+    ${Retry}    Run Keyword If    '${Retry}'=='None'    set variable    ${RetryInti}
+    ...    ELSE    set variable    ${Retry}
+    #log    Retry=======================${Retry}
+    ${pwd}    Run Keyword If    '${pwds}'=='None'    set variable    ${pwd}
+    ...    ELSE    set variable    ${pwds}
+    ${env}    Env_URL    ${Base_URL}
+    ${userslist}    Get Dictionary Keys    ${usersinfo_dict}
+    ${user_is}    Get Count    ${userslist}    ${env}${userName}
+    ${heards}    Run Keyword If    ${user_is}<=0    joyrun_POST_heardsession    ${userName}    ${pwd}    ${Base_URL}
+    ...    ELSE    Get From Dictionary    ${usersinfo_dict}    ${env}${userName}
+    #从字典里取出相应key的值
+    ${uid}=    Get From Dictionary    ${heards}    uid
+    ${sid}=    Get From Dictionary    ${heards}    sid
+    ${timestamp}    GetServertime    ${login_URL}
+    ${ypcookie}=    Get From Dictionary    ${heards}    ypcookie
+    ${heards_dict}=    create dictionary    ypcookie=${ypcookie}
+    ##将ypcookie转为url编码
+    ${ypcookie1}=    urlencode    ${ypcookie}
+    ${cookies}=    create dictionary
+    set to dictionary    ${cookies}    ypcookie=${ypcookie1}
+    set to dictionary    ${cookies}    app_version=${appversion}
+    #log    uid ===${uid}
+    #log    sid ===${sid}
+    #log    heards_dict ===${heards_dict}
+    ${URL}=    set variable    ${Base_URL}
+    ${sign_dict}=    create dictionary    timestamp=${timestamp}
+    ${post_dict}=    create dictionary    timestamp=${timestamp}
+    @{mapstolist_sign}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist_sign}
+    \    set to dictionary    ${sign_dict}    ${map[0]}=${map[1]}
+    @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+    ${sign_dict_tolist}=    evaluate    sorted(${sign_dict}.iteritems())
+    ${len}=    evaluate    len(${sign_dict_tolist})
+    ${signparam} =    set variable    ${EMPTY}
+    : FOR    ${index}    IN RANGE    0    ${len}
+    \    ${signparamkey}    set variable    ${sign_dict_tolist[${index}][0]}
+    \    ${signparamValue}    set variable    ${sign_dict_tolist[${index}][1]}
+    \    ${signparamsting}    set variable    ${signparamkey}${signparamValue}
+    \    ${signparam} =    set variable    ${signparam}${signparamsting}
+    log    signparam=======${signparam}
+    #排序及格式处理
+    ${signkey1}    set variable    ${signparam}${appkey1}${uid}${sid}
+    ${signkey2}    set variable    ${signparam}${appkey2}${uid}${sid}
+    #${signkey1}=    Replace String    ${signkey1}    "    ${EMPTY}
+    #${signkey2}=    Replace String    ${signkey2}    "    ${EMPTY}
+    log    signkey1=====${signkey1}
+    log    signkey2=====${signkey2}
+    #排序及格式处理
+    ${sign1}=    encrypt    ${signkey1}    md5    32
+    ${sign2}=    encrypt    ${signkey2}    md5    32
+    log    运行环境是:${Base_URL}
+    ${Testenv}    Get Lines Matching Pattern    ${Base_URL}    *-test*
+    ${sign1}    Run Keyword If    '${Testenv}'!='${EMPTY}'    set variable    ${signTest}
+    ...    ELSE    set variable    ${signOnline}
+    ${_sign} =    Convert To Uppercase    ${sign1}
+    log    通用签名:${_sign}
+    ${signature} =    Convert To Uppercase    ${sign2}
+    log    业务签名：${signature}
+    set to dictionary    ${heards_dict}    _sign=${_sign}
+    set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
+    set to dictionary    ${heards_dict}    Content-Type=${ContentType}
+    set to dictionary    ${heards_dict}    User-Agent=${UserAgent}
+    set to dictionary    ${heards_dict}    APP_DEV_INFO=${APPDEVINFO}
+    set to dictionary    ${heards_dict}    SYSVERSION=${SYSVERSION}
+    set to dictionary    ${heards_dict}    MODELTYPE=${MODELTYPE}
+    #log    _sign====${_sign}
+    #log    signature====${signature}
+    set to dictionary    ${post_dict}    signature=${signature}
+    ${post_dict_tolist1}=    evaluate    sorted(${post_dict}.iteritems())
+    log    参数编码前：${post_dict}
+    ${post_param}    Evaluate    urllib.urlencode(${post_dict})    urllib
+    log    参数编码后：${post_param}
+    Create Session    run    ${URL}    headers=${heards_dict}    cookies=${cookies}
+    ${resp}=    Post Request    run    uri=${path}    data=${post_param}
+    ${ret_result}    charconver    ${resp.content}
+    ${get_count}    Get Count    ${ret_result}    ret\":"401"
+    ${ret0_count}    Get Count    ${ret_result}    ret\":"0"    #:FOR    ${index}    IN RANGE
+    ...    # 0    ${RetryInti}    #\    Exit For Loop If    ${get_count} == 0    #\
+    ...    # thejoyrun_postd    #\    ...    ${path}    ${maps}    ${userName}
+    ...    # ${Base_URL}    ${pwds}    # ${Retry}
+    Run Keyword If    ${get_count}==1    log    ${userName}的SID过期而登录失败
+    Run Keyword If    ${get_count}==1    Pop From Dictionary    ${usersinfo_dict}    ${env}${userName}
+    #Run Keyword If    ${ret0_count}==1    Set_Global_Var    ${path}    ${ret_result}    ${userName}    ${Base_URL}
+    ${Retry}    Run Keyword If    ${get_count}==1    Evaluate    ${Retry}-1
+    ...    ELSE    Set Variable    ${-1}
+    ${resp}    Run Keyword If    ${get_count}==1 and ${Retry}>=0    thejoyrun_postd    ${path}    ${maps}    ${userName}
+    ...    ${Base_URL}    ${pwds}    ${Retry}
+    ...    ELSE    set variable    ${resp}
+    log    thejoyrun_postd End ...
+    [Return]    ${resp}
+
+thejoyrun_postnl
+    [Arguments]    ${path}    ${maps}    ${Base_URL}    ${Retry}=None
+    [Documentation]    *用于APP内部不需登录的Post场景：post请求data方式关键字——无需登录*
+    ...
+    ...    用于app的用户注册方面，无需用户信息；参数以data方法提交，不出现Url中，而只在body中带公共参数（sign、timestamp）；
+    [Timeout]    30 seconds
+    log    thejoyrun_postnl Start ......
+    ${Retry}    Run Keyword If    '${Retry}'=='None'    set variable    ${RetryInti}
+    ...    ELSE    set variable    ${Retry}
+    ${heards}=    create dictionary
+    #从字典里取出相应key的值
+    ##通过服务器获取timestamp
+    ${heards_dict}=    create dictionary
+    ${timestamp}    GetServertime    ${login_URL}
+    ${cookies}=    create dictionary
+    log    code加密处理
+    log dictionary    ${maps}
+    log    maps=====${maps}
+    ${mapskey}    Get Dictionary Keys    ${maps}
+    ${codeone}    Count Values In List    ${mapskey}    code
+    ${cellone}    Count Values In List    ${mapskey}    cellNumber
+    ${cellNumber}    Run Keyword If    ${codeone}>0 and ${cellone}>0    Get From Dictionary    ${maps}    cellNumber
+    ${codekey}    Run Keyword If    ${codeone}>0 and ${cellone}>0    set variable    joy${timestamp}the${cellNumber}run
+    ${code}    Run Keyword If    ${codeone}>0 and ${cellone}>0    encrypt    ${codekey}    md5    32
+    ${code}    Convert To String    ${code}
+    Run Keyword If    ${codeone}>0 and ${cellone}>0    set to dictionary    ${maps}    code=${code}
+    log Dictionary    ${maps}
+    log    maps=====${maps}
+    set to dictionary    ${cookies}    app_version=${appversion}
+    ${URL}=    set variable    ${Base_URL}
+    ${sign_dict}=    create dictionary    timestamp=${timestamp}
+    log dictionary    ${sign_dict}
+    ${post_dict}=    create dictionary    timestamp=${timestamp}
+    @{mapstolist_sign}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist_sign}
+    \    set to dictionary    ${sign_dict}    ${map[0]}=${map[1]}
+    \    log dictionary    ${sign_dict}
+    @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+    \    log dictionary    ${post_dict}
+    ${sign_dict_tolist}=    evaluate    sorted(${sign_dict}.iteritems())
+    ${len}=    evaluate    len(${sign_dict_tolist})
+    ${signparam} =    set variable    ${EMPTY}
+    : FOR    ${index}    IN RANGE    0    ${len}
+    \    ${signparamkey}    set variable    ${sign_dict_tolist[${index}][0]}
+    \    ${signparamValue}    set variable    ${sign_dict_tolist[${index}][1]}
+    \    ${signparamsting}    set variable    ${signparamkey}${signparamValue}
+    \    ${signparam} =    set variable    ${signparam}${signparamsting}
+    log    signparam=======${signparam}
+    #排序及格式处理
+    ${signkey1}    set variable    ${signparam}${appkey1}
+    ${signkey2}    set variable    ${signparam}${appkey2}
+    log    signkey1=====${signkey1}
+    log    signkey2=====${signkey2}
+    #排序及格式处理
+    ${sign1}=    encrypt    ${signkey1}    md5    32
+    ${sign2}=    encrypt    ${signkey2}    md5    32
+    #通用签名
+    log    运行环境是:${Base_URL}
+    ${Testenv}    Get Lines Matching Pattern    ${Base_URL}    *-test*
+    ${sign1}    Run Keyword If    '${Testenv}'!='${EMPTY}'    set variable    ${signTest}
+    ...    ELSE    set variable    ${signOnline}
+    ${_sign} =    Convert To Uppercase    ${sign1}
+    log    通用签名:${_sign}
+    ${signature} =    Convert To Uppercase    ${sign2}
+    log    业务签名：${signature}
+    set to dictionary    ${heards_dict}    _sign=${_sign}
+    set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
+    set to dictionary    ${heards_dict}    Content-Type=${ContentType}
+    set to dictionary    ${heards_dict}    User-Agent=${UserAgent}
+    set to dictionary    ${heards_dict}    APP_DEV_INFO=${APPDEVINFO}
+    set to dictionary    ${heards_dict}    SYSVERSION=${SYSVERSION}
+    set to dictionary    ${heards_dict}    MODELTYPE=${MODELTYPE}
+    #log    _sign====${_sign}
+    #log    signature====${signature}
+    set to dictionary    ${post_dict}    signature=${signature}
+    ${post_dict_tolist1}=    evaluate    sorted(${post_dict}.iteritems())
+    log    参数编码前：${post_dict}
+    ${post_param}    Evaluate    urllib.urlencode(${post_dict})    urllib
+    log    参数编码后：${post_param}
+    #${post_param}=    Evaluate    '${post_param}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    Create Session    run    ${URL}    headers=${heards_dict}    cookies=${cookies}
+    ${resp}=    Post Request    run    uri=${path}    data=${post_param}
+    ${get_count}    Run Keyword If    ${resp.status_code}==200    Set Variable    ${0}
+    ...    ELSE    Set Variable    ${1}
+    ${Retry}    Run Keyword If    ${get_count}==1    Evaluate    ${Retry}-1
+    ...    ELSE    Set Variable    ${-1}
+    ${resp}    Run Keyword If    ${get_count}==1 and ${Retry}>=0    thejoyrun_postnl    ${path}    ${maps}    ${Base_URL}
+    ...    ${Retry}
+    ...    ELSE    set variable    ${resp}
+    Run Keyword If    ${get_count} == 0    Return From Keyword    ${resp}
+    log    thejoyrun_postnl End ......
+    [Return]    ${resp}
+
+thejoyrun_post_nosign
+    [Arguments]    ${path}    ${maps}    ${userName}    ${Base_URL}    ${pwds}=None    ${Retry}=None
+    [Documentation]    *用于非APP的页面请求不需签名的场景：joyrun中post请求URL方式关键字*
+    ...
+    ...    没有加密的用于非APP的页面请求，参数以data方法提交；
+    [Timeout]    30 seconds
+    log    thejoyrun_post_nosign Start ......
+    ${Retry}    Run Keyword If    '${Retry}'=='None'    set variable    ${RetryInti}
+    ...    ELSE    set variable    ${Retry}
+    ${pwd}    Run Keyword If    '${pwds}'=='None'    set variable    ${pwd}
+    ...    ELSE    set variable    ${pwds}
+    ${env}    Env_URL    ${Base_URL}
+    ${userslist}    Get Dictionary Keys    ${usersinfo_dict}
+    ${user_is}    Get Count    ${userslist}    ${env}${userName}
+    ${heards}    Run Keyword If    ${user_is}<=0    joyrun_POST_heardsession    ${userName}    ${pwd}    ${Base_URL}
+    ...    ELSE    Get From Dictionary    ${usersinfo_dict}    ${env}${userName}
+    #从字典里取出相应key的值
+    ${uid}=    Get From Dictionary    ${heards}    uid
+    ${sid}=    Get From Dictionary    ${heards}    sid
+    ${timestamp}    GetServertime    ${login_URL}
+    ${ypcookie}=    Get From Dictionary    ${heards}    ypcookie
+    ${heards_dict}=    create dictionary    ypcookie=${ypcookie}
+    ${URL}=    set variable    ${Base_URL}
+    ##将ypcookie转为url编码
+    ${ypcookie1}=    urlencode    ${ypcookie}
+    ${cookies}=    create dictionary
+    set to dictionary    ${cookies}    ypcookie=${ypcookie1}
+    set to dictionary    ${cookies}    app_version=${APPVERSION}
+    log    uid ===${uid}
+    log    sid ===${sid}
+    log    heards_dict ===${heards_dict}
+    ${post_dict}=    create dictionary
+    @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+    set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
+    set to dictionary    ${heards_dict}    Content-Type=${ContentType}
+    set to dictionary    ${heards_dict}    User-Agent=${UserAgent}
+    set to dictionary    ${heards_dict}    APP_DEV_INFO=${APPDEVINFO}
+    set to dictionary    ${heards_dict}    SYSVERSION=${SYSVERSION}
+    set to dictionary    ${heards_dict}    MODELTYPE=${MODELTYPE}
+    log    参数编码前：${post_dict}
+    ${post_param}    Evaluate    urllib.urlencode(${post_dict})    urllib
+    log    参数编码后：${post_param}
+    #因后端和运维的签名方法不一致，兼容处理
+    ${path}    set variable    ${path}?${post_param}
+    ####
+    Create Session    run    ${URL}    headers=${heards_dict}    cookies=${cookies}
+    #${resp}=    Post Request    run    uri=${path}    data=${post_param}
+    ${resp}=    Post Request    run    uri=${path}
+    ${get_count}    Get Count    ${resp.content}    ret\":"401"
+    Run Keyword If    ${get_count}==1    log    ${userName}的SID过期而登录失败
+    Run Keyword If    ${get_count}==1    Pop From Dictionary    ${usersinfo_dict}    ${env}${userName}
+    ${Retry}    Run Keyword If    ${get_count}==1    Evaluate    ${Retry}-1
+    ...    ELSE    Set Variable    ${-1}
+    ${resp}    Run Keyword If    ${get_count}==1 and ${Retry}>=0    thejoyrun_post_nosign    ${path}    ${maps}    ${userName}
+    ...    ${Base_URL}    ${pwds}    ${Retry}
+    ...    ELSE    set variable    ${resp}
+    Run Keyword If    ${get_count} == 0    Return From Keyword    ${resp}
+    log    thejoyrun_post_nosign End ......
+    [Return]    ${resp}
+
+thejoyrun_postjson_wxminp
+    [Arguments]    ${path}    ${maps}    ${Base_URL}    ${uid}=None
+    [Documentation]    *用于微信小程序Post场景：joyrun中post请求json方式关键字*
+    ...
+    ...    参数以data提交，在出现Url中，也在body中带公共参数（appid、timestamp、sid主要用于小程序）；
+    [Timeout]    30 seconds
+    log    thejoyrun_postjson_wxminp Start ......
+    ##通过本地获取timestamp
+    ${ContentType}    Set Variable    application/json;charset=UTF-8
+    ${wxminpnames}    Split String    ${path}    /
+    ${wxminpname1}    Get From List    ${wxminpnames}    1
+    ${wxminpname}    Run Keyword If    '${wxminpname1}'<>'wallet'    set variable    ${wxminpname1}
+    ...    ELSE    Set variable    corpcrew
+    ${appid}    set variable    ${${wxminpname}appid}
+    ${sid}    set variable    ${${wxminpname}sid}
+    #${appkey}    set variable    ${${wxminpname}appkey}
+    ${appkey}    set variable    ${mappkey}
+    ${time}    GetServertime    ${login_URL}
+    ${time}    evaluate    int(${time}*1000)
+    ${timestamp}    set variable    ${time}
+    log    timestamp=${timestamp}
+    #当需要传uid时，则uid从map中取，否则uid为0
+    ${mapskey}    Get Dictionary Keys    ${maps}
+    ${k}    Get Count    ${mapskey}    uid
+    ${uid}    Run Keyword If    ${k}==1    Get From Dictionary    ${maps}    uid
+    ...    ELSE    set variable    0
+    ${heards_dict}=    create dictionary
+    log    sid ===${sid}
+    log    heards_dict ===${heards_dict}
+    ${URL}=    set variable    ${Base_URL}
+    ${post_dict}=    create dictionary    &{maps}
+    #公共参数timestamp、appid、sid
+    set to dictionary    ${post_dict}    timestamp=${timestamp}
+    set to dictionary    ${post_dict}    appid=${appid}
+    set to dictionary    ${post_dict}    sid=${sid}
+    log    post_dict：${post_dict}
+    #${post_param}    Evaluate    urllib.urlencode(${post_dict})    urllib
+    #log    参数编码后：${post_param}
+    #签名
+    ${signkey}=    Run Keyword If    ${uid}==0    set variable    ${appid}${timestamp}${sid}${appkey}
+    ...    ELSE    set variable    ${appid}${timestamp}${sid}${uid}${appkey}
+    ${signkey}=    Replace String    ${signkey}    "    ${EMPTY}
+    log    signkey=====${signkey}
+    #排序及格式处理
+    ${sign}=    encrypt    ${signkey}    md5    32
+    log    使用万能签名${mapp_sgin}
+    ${sign}=    Set Variable    ${mapp_sgin}
+    #请求头处理${UserAgent}
+    set to dictionary    ${heards_dict}    sign=${sign}
+    set to dictionary    ${heards_dict}    Content-Type=${ContentType}
+    set to dictionary    ${heards_dict}    User-Agent=Mozilla/5.0 (iPhone; CPU iPhone OS 11_3 like Mac OS X)
+    Create Session    runwx    ${URL}    headers=${heards_dict}
+    ${resp}=    Post Request    runwx    uri=${path}    data=${post_dict}
+    log    thejoyrun_postjson_wxminp End ......
+    [Return]    ${resp}
+
+thejoyrun_get_wxminp
+    [Arguments]    ${path}    ${maps}    ${Base_URL}    ${uid}=None
+    [Documentation]    *用于微信小程序Get场景：joyrun中get请求关键字*
+    ...
+    ...    参数以params提交，在出现Url中，带公共参数（appid、timestamp、sid主要用于跑团小程序）；
+    [Timeout]    30 seconds
+    log    thejoyrun_get_wxminp Start ......
+    ${wxminpnames}    Split String    ${path}    /
+    ${wxminpname1}    Get From List    ${wxminpnames}    1
+    ${wxminpname}    Run Keyword If    '${wxminpname1}'<>'wallet'    set variable    ${wxminpname1}
+    ...    ELSE    Set variable    corpcrew
+    ${appid}    set variable    ${${wxminpname}appid}
+    ${sid}    set variable    ${${wxminpname}sid}
+    #${appkey}    set variable    ${${wxminpname}appkey}
+    ${appkey}    set variable    ${mappkey}
+    ${timestamp}    GetServertime    ${login_URL}
+    ${timestamp1}=    set variable    ${timestamp}000
+    ${timestamp1}=    Replace String    ${timestamp1}    "    ${EMPTY}
+    #当需要传uid时，则uid从map中取，否则uid为0
+    ${mapskey}    Get Dictionary Keys    ${maps}
+    ${k}    Get Count    ${mapskey}    uid
+    ${uid}    Run Keyword If    ${k}==1    Get From Dictionary    ${maps}    uid
+    ...    ELSE    set variable    0
+    ${heards_dict}=    create dictionary
+    log    sid ===${sid}
+    log    heards_dict ===${heards_dict}
+    ${URL}=    set variable    ${Base_URL}
+    ${post_dict}=    create dictionary    &{maps}
+    #公共参数timestamp、appid、sid
+    set to dictionary    ${post_dict}    timestamp=${timestamp1}
+    set to dictionary    ${post_dict}    appid=${appid}
+    set to dictionary    ${post_dict}    sid=${sid}
+    #签名
+    ${signkey}=    Run Keyword If    ${uid}==0    set variable    ${appid}${timestamp1}${sid}${appkey}
+    ...    ELSE    set variable    ${appid}${timestamp1}${sid}${uid}${appkey}
+    ${signkey}=    Replace String    ${signkey}    "    ${EMPTY}
+    log    signkey=====${signkey}
+    #排序及格式处理
+    ${sign}=    encrypt    ${signkey}    md5    32
+    log    使用万能签名${mapp_sgin}
+    ${sign}=    Set Variable    ${mapp_sgin}
+    #请求头处理
+    set to dictionary    ${heards_dict}    sign=${sign}
+    set to dictionary    ${heards_dict}    Content-Type=${ContentType}
+    set to dictionary    ${heards_dict}    User-Agent=${UserAgent}
+    log    sign====${sign}
+    log    post_dict======${post_dict}
+    log    参数编码前：${post_dict}
+    ${post_dict}    Evaluate    urllib.urlencode(${post_dict})    urllib
+    log    参数编码后：${post_dict}
+    Create Session    run    ${URL}    headers=${heards_dict}
+    ${resp}=    Get Request    run    uri=${path}    params=${post_dict}
+    log    thejoyrun_get_wxminp End ...
+    [Return]    ${resp}
+
+thejoyrun_getp
+    [Arguments]    ${path}    ${maps}    ${userName}    ${Base_URL}    ${pwds}=None    ${Retry}=None
+    [Documentation]    *用于APP内需要登录和签名的Get场景：joyrun中get请求url方式关键字*
+    ...
+    ...    参数以params方法提交出现Url中，也在body带公共参数（signature、timestamp）；
+    [Timeout]    30 seconds
+    log    thejoyrun_getp Start ......
+    ${Retry}    Run Keyword If    '${Retry}'=='None'    set variable    ${RetryInti}
+    ...    ELSE    set variable    ${Retry}
+    ${pwd}    Run Keyword If    '${pwds}'=='None'    set variable    ${pwd}
+    ...    ELSE    set variable    ${pwds}
+    ${env}    Env_URL    ${Base_URL}
+    ${userslist}    Get Dictionary Keys    ${usersinfo_dict}
+    ${user_is}    Get Count    ${userslist}    ${env}${userName}
+    ${heards}    Run Keyword If    ${user_is}<=0    joyrun_POST_heardsession    ${userName}    ${pwd}    ${Base_URL}
+    ...    ELSE    Get From Dictionary    ${usersinfo_dict}    ${env}${userName}
+    #从字典里取出相应key的值
+    ${uid}=    Get From Dictionary    ${heards}    uid
+    ${sid}=    Get From Dictionary    ${heards}    sid
+    ${timestamp}    GetServertime    ${login_URL}
+    ${ypcookie}=    Get From Dictionary    ${heards}    ypcookie
+    ${heards_dict}=    create dictionary    ypcookie=${ypcookie}
+    ##将ypcookie转为url编码
+    ${ypcookie1}=    urlencode    ${ypcookie}
+    ${cookies}=    create dictionary
+    set to dictionary    ${cookies}    ypcookie=${ypcookie1}
+    set to dictionary    ${cookies}    app_version=${appversion}
+    #log    uid ===${uid}
+    #log    sid ===${sid}
+    log    heards_dict ===${heards_dict}
+    ${URL}=    set variable    ${Base_URL}
+    ${sign_dict}=    create dictionary    timestamp=${timestamp}
+    ${post_dict}=    create dictionary    timestamp=${timestamp}
+    @{mapstolist_sign}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist_sign}
+    \    set to dictionary    ${sign_dict}    ${map[0]}=${map[1]}
+    @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+    #排序及格式处理
+    ${sign_dict_tolist}=    evaluate    sorted(${sign_dict}.iteritems())
+    ${signparam}=    convert to string    ${sign_dict_tolist}
+    ${signparam}=    Replace String    ${signparam}    [    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    u'    '
+    ${signparam}=    Replace String    ${signparam}    ', '    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ('    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ')    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ,${SPACE}    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ]    ${EMPTY}
+    #${signparam}=    Replace String    ${signparam}    &    ${EMPTY}
+    ${signparam}=    Evaluate    '${signparam}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    #log    ${signparam}
+    #排序及格式处理
+    log    signparam===${signparam}
+    ${signkey1}=    set variable    ${signparam}${appkey1}${uid}${sid}
+    ${signkey2}=    set variable    ${signparam}${appkey2}${uid}${sid}
+    #${signkey1}=    Replace String    ${signkey1}    "    ${EMPTY}
+    #${signkey2}=    Replace String    ${signkey2}    "    ${EMPTY}
+    #log    signkey1=====${signkey1}
+    #log    signkey2=====${signkey2}
+    #排序及格式处理
+    ${sign1}=    encrypt    ${signkey1}    md5    32
+    ${sign2}=    encrypt    ${signkey2}    md5    32
+    log    运行环境是:${Base_URL}
+    ${Testenv}    Get Lines Matching Pattern    ${Base_URL}    *-test*
+    ${sign1}    Run Keyword If    '${Testenv}'!='${EMPTY}'    set variable    ${signTest}
+    ...    ELSE    set variable    ${signOnline}
+    ${_sign} =    Convert To Uppercase    ${sign1}
+    log    通用签名:${_sign}
+    ${signature} =    Convert To Uppercase    ${sign2}
+    log    业务签名：${signature}
+    set to dictionary    ${heards_dict}    _sign=${_sign}
+    set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
+    set to dictionary    ${heards_dict}    Content-Type=${ContentType}
+    set to dictionary    ${heards_dict}    User-Agent=${UserAgent}
+    set to dictionary    ${heards_dict}    APP_DEV_INFO=${APPDEVINFO}
+    set to dictionary    ${heards_dict}    SYSVERSION=${SYSVERSION}
+    set to dictionary    ${heards_dict}    MODELTYPE=${MODELTYPE}
+    #log    _sign====${_sign}
+    #log    signature====${signature}
+    set to dictionary    ${post_dict}    signature=${signature}
+    log    参数编码前：${post_dict}
+    ${post_param}    Evaluate    urllib.urlencode(${post_dict})    urllib
+    log    参数编码后：${post_param}
+    Create Session    run    ${URL}    headers=${heards_dict}    cookies=${cookies}
+    ${resp}=    Get Request    run    uri=${path}    params=${post_param}
+    ${get_count}    Get Count    ${resp.content}    ret\":"401"
+    Run Keyword If    ${get_count}==1    log    ${userName}的SID过期而登录失败
+    Run Keyword If    ${get_count}==1    Pop From Dictionary    ${usersinfo_dict}    ${env}${userName}
+    ${Retry}    Run Keyword If    ${get_count}==1    Evaluate    ${Retry}-1
+    ...    ELSE    Set Variable    ${-1}
+    ${resp}    Run Keyword If    ${get_count}==1 and ${Retry}>=0    thejoyrun_getp    ${path}    ${maps}    ${userName}
+    ...    ${Base_URL}    ${pwds}    ${Retry}
+    ...    ELSE    set variable    ${resp}
+    Run Keyword If    ${get_count} == 0    Return From Keyword    ${resp}
+    log    thejoyrun_getp End ...
+    [Return]    ${resp}
+
+thejoyrun_get_nosign
+    [Arguments]    ${path}    ${maps}    ${userName}    ${Base_URL}    ${pwds}=None    ${Retry}=None
+    [Documentation]    *用于非APP请求不需要签名Get场景：joyrun中get请求url方式参数的关键字*
+    ...
+    ...    参数以params方法提交，出现Url中，也在body中，但不需要签名没有公共参数；
+    [Timeout]    30 seconds
+    log    thejoyrun_get_nosign Start ......
+    ${Retry}    Run Keyword If    '${Retry}'=='None'    set variable    ${RetryInti}
+    ...    ELSE    set variable    ${Retry}
+    ${pwd}    Run Keyword If    '${pwds}'=='None'    set variable    ${pwd}
+    ...    ELSE    set variable    ${pwds}
+    ${env}    Env_URL    ${Base_URL}
+    ${userslist}    Get Dictionary Keys    ${usersinfo_dict}
+    ${user_is}    Get Count    ${userslist}    ${env}${userName}
+    ${heards}    Run Keyword If    ${user_is}<=0    joyrun_POST_heardsession    ${userName}    ${pwd}    ${Base_URL}
+    ...    ELSE    Get From Dictionary    ${usersinfo_dict}    ${env}${userName}
+    #从字典里取出相应key的值
+    ${uid}=    Get From Dictionary    ${heards}    uid
+    ${sid}=    Get From Dictionary    ${heards}    sid
+    ${timestamp}    GetServertime    ${login_URL}
+    ${ypcookie}=    Get From Dictionary    ${heards}    ypcookie
+    ${heards_dict}=    create dictionary    ypcookie=${ypcookie}
+    ##将ypcookie转为url编码
+    ${ypcookie1}=    urlencode    ${ypcookie}
+    ${cookies}=    create dictionary
+    set to dictionary    ${cookies}    ypcookie=${ypcookie1}
+    set to dictionary    ${cookies}    app_version=${appversion}
+    #log    uid ===${uid}
+    #log    sid ===${sid}
+    #log    heards_dict ===${heards_dict}
+    ${URL}=    set variable    ${Base_URL}
+    ${post_dict}=    create dictionary
+    @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+    #排序及格式处理
+    set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
+    set to dictionary    ${heards_dict}    Content-Type=${ContentType}
+    set to dictionary    ${heards_dict}    User-Agent=${UserAgent}
+    set to dictionary    ${heards_dict}    APP_DEV_INFO=${APPDEVINFO}
+    set to dictionary    ${heards_dict}    SYSVERSION=${SYSVERSION}
+    set to dictionary    ${heards_dict}    MODELTYPE=${MODELTYPE}
+    log    参数编码前：${post_dict}
+    ${post_param}    Evaluate    urllib.urlencode(${post_dict})    urllib
+    log    参数编码后：${post_param}
+    Create Session    run    ${URL}    headers=${heards_dict}    cookies=${cookies}
+    ${resp}=    Get Request    run    uri=${path}    params=${post_param}
+    ${get_count}    Get Count    ${resp.content}    ret\":"401"
+    Run Keyword If    ${get_count}==1    log    ${userName}的SID过期而登录失败
+    Run Keyword If    ${get_count}==1    Pop From Dictionary    ${usersinfo_dict}    ${env}${userName}
+    ${Retry}    Run Keyword If    ${get_count}==1    Evaluate    ${Retry}-1
+    ...    ELSE    Set Variable    ${-1}
+    ${resp}    Run Keyword If    ${get_count}==1 and ${Retry}>=0    thejoyrun_get_nosign    ${path}    ${maps}    ${userName}
+    ...    ${Base_URL}    ${pwds}    ${Retry}
+    ...    ELSE    set variable    ${resp}
+    Return From Keyword If    ${get_count}==0    ${resp}
+    log    thejoyrun_get_nosign End ...
+    [Return]    ${resp}
+
+thejoyrun_postjson
+    [Arguments]    ${path}    ${maps}    ${Base_URL}    ${uid}=None
+    [Documentation]    *用于微信小程序Post场景：joyrun中post请求json方式关键字*
+    ...
+    ...    参数以data提交，在出现Url中，也在body中带公共参数（appid、timestamp、sid主要用于小程序）；
+    [Timeout]    30 seconds
+    log    thejoyrun_postjson Start ......
+    ${ContentType}    Set Variable    application/json;charset=UTF-8
+    ${heards_dict}=    create dictionary
+    log    heards_dict ===${heards_dict}
+    ${URL}=    set variable    ${Base_URL}
+    ${post_dict}=    create dictionary    &{maps}
+    log    post_dict：${post_dict}
+    #请求头处理${UserAgent}
+    set to dictionary    ${heards_dict}    Content-Type=${ContentType}
+    set to dictionary    ${heards_dict}    User-Agent=Mozilla/5.0 (iPhone; CPU iPhone OS 11_3 like Mac OS X)
+    Create Session    runwx    ${URL}    headers=${heards_dict}
+    ${resp}=    Post Request    runwx    uri=${path}    data=${post_dict}
+    log    thejoyrun_postjson End ......
+    [Return]    ${resp}

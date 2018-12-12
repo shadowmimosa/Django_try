@@ -1,0 +1,13 @@
+*** Settings ***
+Library           SSHLibrary
+
+*** Keywords ***
+ssh_login
+    [Arguments]    ${host}    ${user}    ${pwd}    ${port}=32200
+    [Documentation]    默认端口32200
+    ${ip}    set variable    ${host}
+    ${USERNAME}    set variable    ${user}
+    ${PASSWORD}    set variable    ${pwd}
+    ${p}    set variable    ${port}
+    Open Connection    ${ip}    ${EMPTY}    ${p}
+    Login    ${USERNAME}    ${PASSWORD}

@@ -1,0 +1,150 @@
+*** Settings ***
+Documentation     H5公共方法
+Resource          ../Public/cookie_operation_h5.txt
+
+*** Variables ***
+${password}       67889911
+
+*** Keywords ***
+acshow_post_h5
+    [Arguments]    ${path}    ${maps}    ${tokenuserName}    ${acshow_URL}
+    [Documentation]    重构H5 Post公共方法
+    ${appid}=    set variable    1131    #1131是酷狗分配给繁星2.0的客户端ID    ，IOS和Android都是1131
+    Comment    ${password}    Set Variable    67889911
+    @{logintoken}=    ac_get_token_h5    ${tokenuserName}    ${password}
+    ${ticket}=    set variable    ${logintoken[0]}
+    ${uid}=    set variable    ${logintoken[1]}
+
+    ${post_dict}=    create dictionary
+    @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+    #定义H5 ,密钥Key值，如果字符串首字符用#号，需要使用\进行转义
+    ${keybase}    set variable    \#FX_md5*!
+    ${_t}    get time    epoch
+    ${_t}    evaluate    int(${_t}*1000)
+    ${fx-t}    evaluate    str(${_t})
+
+    set to dictionary    ${post_dict}    fx-t=${fx-t}
+    #将入参中的Value值取出
+    ${values}    evaluate    ${post_dict}.values()
+    #将取出的Value值进行排序
+    ${signparam}=    evaluate    sorted(${values})
+    ${signparam}=    convert to string    ${signparam}
+    ${signparam}=    Replace String    ${signparam}    [    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    u'    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ',    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ]    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    "    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    "    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    '    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ${SPACE}    ${EMPTY}
+    #拼接需要加密的字符串
+    ${md5param}    set variable    ${signparam}${keybase}${fx-t}
+    log    ${md5param}
+    #MD5加密
+    ${fx-p}=    encrypt    ${md5param}    md5    32
+    ${resp}=    post_request_general    ${acshow_URL}    ${post_dict}    Content-Type=application/x-www-form-urlencoded;fx-p=${fx-p}    \    fx-ticket=${ticket};fx-uid=${uid}
+    ...    ${path}
+
+    [Return]    ${resp}
+
+acshow_get_h5
+    [Arguments]    ${path}    ${maps}    ${acshow_URL}
+    #h5密钥
+    ${keybase}    set variable    !PHP#_$Sh12Adefig
+    ${chennelid}    set variable    200
+    ${URL}=    set variable    ${acshow_URL}    #${acURL}    #ac_config.py
+    ${post_dict}=    create dictionary
+    ${map_dict}    create dictionary
+    @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${map_dict}    ${map[0]}=${map[1]}
+    ${map_dict_param}=    convert to string    ${map_dict}
+    ${map_dict_param}=    Replace String    ${map_dict_param}    u'    '
+    ${map_dict_param}=    Replace String    ${map_dict_param}    ': '    =
+    ${map_dict_param}=    Replace String    ${map_dict_param}    ,${SPACE}    &
+    ${map_dict_param}=    Replace String    ${map_dict_param}    {    ${EMPTY}
+    ${map_dict_param}=    Replace String    ${map_dict_param}    }    ${EMPTY}
+    ${map_dict_param}=    Replace String    ${map_dict_param}    '    ${EMPTY}
+    log    拼接参数，然后将参数进行base64加密
+    log    ${map_dict_param}
+    ${signparam}    Encrypt    ${chennelid}    base64en
+    ${signparam1}=    convert to string    ${signparam}
+    ${signparam2}    set variable    ${signparam1}${keybase}
+    ${sign}=    encrypt    ${signparam2}    md5    32
+    ${sign}=    Convert To Lowercase    ${sign}
+    set to dictionary    ${post_dict}    sign=${sign}
+    #set to dictionary    ${post_dict}    chennelid    ${chennelid}
+    set to dictionary    ${post_dict}    data=${signparam}
+    ${post_dict_tolist1}=    evaluate    sorted(${post_dict}.iteritems())
+    ${post_param}=    convert to string    ${post_dict_tolist1}
+    ${post_param}=    Replace String    ${post_param}    [    ${EMPTY}
+    ${post_param}=    Replace String    ${post_param}    u'    '
+    ${post_param}=    Replace String    ${post_param}    ', '    =
+    ${post_param}=    Replace String    ${post_param}    ('    ${EMPTY}
+    ${post_param}=    Replace String    ${post_param}    ')    ${EMPTY}
+    ${post_param}=    Replace String    ${post_param}    ,${SPACE}    &
+    ${post_param}=    Replace String    ${post_param}    ]    ${EMPTY}
+    ${post_param}=    Evaluate    '${post_param}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    ${resp}=    get_request_general    ${URL}    params=${post_param}    uri=${path}
+    [Return]    ${resp}
+
+acshow_nosign_get
+    [Arguments]    ${path}    ${maps}    ${acshow_URL}
+    #去掉sign签名
+    ${keybase}    set variable    !PHP#_$Sh12Adefig
+    ${chennelid}    set variable    200
+    ${URL}=    set variable    ${acshow_URL}    #${acURL}    #ac_config.py
+    ${post_dict}=    create dictionary
+    ${map_dict}    create dictionary
+    @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${map_dict}    ${map[0]}=${map[1]}
+    ${map_dict_param}=    convert to string    ${map_dict}
+    ${map_dict_param}=    Replace String    ${map_dict_param}    u'    '
+    ${map_dict_param}=    Replace String    ${map_dict_param}    ': '    =
+    ${map_dict_param}=    Replace String    ${map_dict_param}    ,${SPACE}    &
+    ${map_dict_param}=    Replace String    ${map_dict_param}    {    ${EMPTY}
+    ${map_dict_param}=    Replace String    ${map_dict_param}    }    ${EMPTY}
+    ${map_dict_param}=    Replace String    ${map_dict_param}    '    ${EMPTY}
+    # log    拼接参数，然后将参数进行base64加密
+    # log    ${map_dict_param}
+    # ${signparam}    Encrypt    ${chennelid}    base64en
+    # ${signparam1}=    convert to string    ${signparam}
+    # ${signparam2}    set variable    ${signparam1}${keybase}
+    # ${sign}=    encrypt    ${signparam2}    md5    32
+    # ${sign}=    Convert To Lowercase    ${sign}
+    # set to dictionary    ${post_dict}    sign    ${sign}
+    # #set to dictionary    ${post_dict}    chennelid    ${chennelid}
+    # set to dictionary    ${post_dict}    data    ${signparam}
+    # ${post_dict_tolist1}=    evaluate    sorted(${post_dict}.iteritems())
+    # ${post_param}=    convert to string    ${post_dict_tolist1}
+    # ${post_param}=    Replace String    ${post_param}    [    ${EMPTY}
+    # ${post_param}=    Replace String    ${post_param}    u'    '
+    # ${post_param}=    Replace String    ${post_param}    ', '    =
+    # ${post_param}=    Replace String    ${post_param}    ('    ${EMPTY}
+    # ${post_param}=    Replace String    ${post_param}    ')    ${EMPTY}
+    # ${post_param}=    Replace String    ${post_param}    ,${SPACE}    &
+    # ${post_param}=    Replace String    ${post_param}    ]    ${EMPTY}
+    # ${post_param}=    Evaluate    '${post_param}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    ${resp}=    get_request_general    ${URL}    params=${map_dict_param}    uri=${path}
+    [Return]    ${resp}
+
+format string
+    [Arguments]    ${input}
+    ${list}=    set variable    ${input}
+    ${list}=    replace string    ${list}    {    ${EMPTY}
+    ${list}=    replace string    ${list}    }    ${EMPTY}
+    ${list}=    replace string    ${list}    "    ${EMPTY}
+    @{list}=    Split String    ${list}    ,
+    [Return]    @{list}
+
+countbyitem
+    [Arguments]    ${content}    ${item}    ${attribute}
+    [Documentation]    检查每个分类返回的数据个数
+    ${dict}=    Evaluate    json.dumps(${content})    json
+    ${jkey}=    Evaluate    ${dict}.get('data').get('${item}')    json
+    ${jkey}=    Convert To String    ${jkey}
+    ${count}    Get Count    ${jkey}    ${attribute}
+    [Return]    ${count}

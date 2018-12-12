@@ -1,0 +1,320 @@
+*** Settings ***
+Library           Collections
+Library           RequestsLibrary
+Library           pymysql
+Library           DatabaseLibrary
+Library           String
+Library           HttpLibrary.HTTP
+Library           ../Lib/tools_library.py
+Library           ../Lib/Usertool_01.py
+*** Variable ***
+${signOnline}          A4729E62-3701-48C3-A15D-7391838FA186    #可以放置一些公共参数；
+${signTest}            a9ff6970eb814e6894389ca8b12f3030    #可以放置一些公共参数；
+${pwd}                 67889911    #可以放置一些公共参数；
+${loginTest}           http://api-test.thejoyrun.com
+${loginOnline}         http://api.thejoyrun.com
+${fxUrl}               http://fanxing.kugoucom
+*** Keywords ***
+
+visitor_get
+    [Arguments]    ${vsUrl}    ${args}=None
+    [Documentation]    *用于请求游客api接口*
+    ...
+    ...    *返回值*: _${resp}_
+    ...
+    ...    *eg:*
+    ...
+    ...    请求 http://fx62.kugou.com/VServices/UserService.UserExtService.getUserGiftRank/24713004-1-6-get/
+    ...
+    ...    | ${resp}= | visitor_get | http://fx62.kugou.com/VServices/UserService.UserExtService.getUserGiftRank | 24713004-1-6-get |
+    Create Session    fxauto    ${vsUrl}
+    ${resp}=    Get Request    fxauto    ${args}
+    [Return]    ${resp}
+
+fx_get_request_hascookie
+    [Arguments]    ${referer}    ${act}    ${mtd}    ${args}    ${cookie}
+    [Documentation]    用于有cookie的get请求
+    ...
+    ...    return value: ${resp}
+    ${header}    create dictionary    referer=${referer}
+    ${paralist}    create dictionary    act=${act}    mtd=${mtd}    args=${args}
+    ${cookies}    create dictionary    KuGoo=${cookie}
+    Create Session    fx    ${fxUrl}    ${EMPTY}    ${cookies}
+    ${resp}=    Get Request    fx    Services.php    ${header}    ${paralist}
+    [Return]    ${resp}
+
+fx_get_request_nocookie
+    [Arguments]    ${referer}    ${act}    ${mtd}    ${args}
+    [Documentation]    用于无cookie的get请求
+    ...
+    ...    return value: ${resp}
+    ${header}    create dictionary    referer=${referer}
+    ${paralist}    create dictionary    act=${act}    mtd=${mtd}    args=${args}
+    Create Session    fx    ${fxUrl}
+    ${resp}=    Get Request    fx    Services.php    ${header}    ${paralist}
+    [Return]    ${resp}
+
+fx_get_request
+    [Arguments]    ${referer}    ${act}    ${mtd}    ${args}   ${fxUrl}   ${cookie}=None
+    [Documentation]    用于get请求
+    ...    如果有cookie，cookie为最后一个参数，否则不填
+    ...    本关键字只支持cookie的Kugoo字段
+    ...
+    ...    return value: ${resp}
+    ...
+    ...    eg：
+    ...    无cookie
+    ...    | ${resp}= | fx_get_request | ${referer} | ${act} | ${mtd} | ${flf_success_arg} |
+    ...
+    ...    有cookie
+    ...    | ${resp}= | fx_get_request | ${referer} | ${act} | ${mtd} | ${flf_success_arg} | ${cookie} |
+    ${header}    create dictionary    referer=${referer}
+    ${paralist}    create dictionary    act=${act}    mtd=${mtd}    args=${args}
+    ${cookies}    run keyword unless    '${cookie}' == '${None}'    create dictionary    KuGoo=${cookie}
+    run keyword if    '${cookie}' == '${None}'    Create Session    fx    ${fxUrl}
+    run keyword unless    '${cookie}' == '${None}'    Create Session    fx    ${fxUrl}    ${EMPTY}    ${cookies}
+    ${resp}=    Get Request    fx    Services.php    ${header}    ${paralist}
+    [Return]    ${resp}
+
+fx_execFunc
+    [Arguments]    ${referer}    ${args}   ${fxUrl}  ${cookie_name}=None    ${cookie_value}=None
+    [Documentation]    回调函数相关操作是通过调用PHP接口TestToolService.TestService来实现的
+    ...
+    ...    入参：referer、args（需要执行的函数<\需要转义>，函数传参<多个参数用'-'号隔开>）
+    ...
+    ...    1.普通入参（多个入参间用‘-’号隔开）
+    ...    eg:
+    ...    | ${resp}= | fx_execFunc | ${referer} | ["\\\\Fx\\\\DAL\\\\AllConfig\\\\ImageCodeConfig::setCodeBy","videoComment-1234"] |
+    ...    最终setCodeBy函数的传参有2个 —— videoComment 及 1234
+    ...
+    ...    2.入参为一个数组
+    ...    eg:
+    ...    | ${resp}= | fx_execFunc | ${referer} | ["\\\\Fx\\\\BLL\\\\ServerOption\\\\ServerOption::save","array('offlineVideo'=>'0','offlineVideoSoa'=>'0')"] |
+    ...    最终save函数的传参为一个数组 —— array('offlineVideo'=>'0','offlineVideoSoa'=>'0')
+    ...
+    ...    说明：因RF框架会对转义做一次处理，繁星的Service.php又会对转义做一次处理，故\需要写成\\\\（4个）
+    ${header}    create dictionary    referer=${referer}
+    ${paralist}    create dictionary    act=TestToolService.TestService    mtd=execFunc    args=${args}
+    ${cookies}    run keyword unless    '${cookie_name}' == '${None}'    create dictionary    ${cookie_name}=${cookie_value}
+    run keyword if    '${cookie_name}' == '${None}'    Create Session    fx    ${fxUrl}    ${EMPTY}
+    ...    ELSE    Create Session    fx    ${fxUrl}    ${EMPTY}    ${cookies}
+    ${resp}=    Get Request    fx    Services.php    ${header}    ${paralist}
+    [Return]    ${resp}
+
+fx_post_request
+    [Arguments]    ${headers}    ${act}    ${mtd}    ${args}  ${fxUrl}   ${cookie}=None
+    [Documentation]    用于post请求
+    ...    如果有cookie，cookie为最后一个参数，否则不填
+    ...
+    ...    return value: ${resp}
+    ...
+    ...    eg：
+    ...    无cookie
+    ...    | ${resp}= | fx_post_request | ${headers} | ${act} | ${mtd} | ${args} |
+    ...
+    ...    有cookie
+    ...    | ${resp}= | fx_post_request | ${headers} | ${act} | ${mtd} | ${args} | ${cookie} |
+    ${headerlist}    create dictionary
+    : FOR    ${header}    IN    @{headers.split(';')}    #用；分割cookie
+    \    run keyword if    '${header}' == '${None}'    exit for loop    #如果header为none，则跳出loop
+    \    ${header_split}=    splitbyequal    ${header}
+    \    Set To Dictionary    ${headerlist}    ${header_split[0]}    ${header_split[1]}    #set到一起
+    ${uri}=    set variable    Services.php?act=${act}\&mtd=${mtd}
+    ${data}=    set variable    ${args}
+    ${cookies}    run keyword unless    '${cookie}' == '${None}'    create dictionary    KuGoo=${cookie}
+    run keyword if    '${cookie}' == '${None}'    Create Session    fx    ${fxUrl}
+    run keyword unless    '${cookie}' == '${None}'    Create Session    fx    ${fxUrl}    ${EMPTY}    ${cookies}
+    ${resp}=    Post Request    fx    ${uri}    ${data}    ${headerlist}
+    [Return]    ${resp}
+
+fx_get_request_twocookie
+    [Arguments]    ${referer}    ${act}    ${mtd}    ${args}    ${cookie}    ${cookie1}   ${fxUrl}
+    [Documentation]    该关键字与fx_get_request_hascookie类似，不同的是会多带一个_m_u_的cookie，用于离线内容评论接口的验证码生成
+    ...
+    ...    详细逻辑查看以下PHP代码：
+    ...
+    ...    Fx\DAL\AllConfig\ImageCodeConfig::setCodeBy(string $key, string $value)
+    ${header}    create dictionary    referer=${referer}
+    ${paralist}    create dictionary    act=${act}    mtd=${mtd}    args=${args}
+    ${cookies}    create dictionary    _m_u_=${cookie1}    KuGoo=${cookie}
+    Create Session    fx    ${fxUrl}    ${EMPTY}    ${cookies}
+    ${resp}=    Get Request    fx    Services.php    ${header}    ${paralist}
+    [Return]    ${resp}
+
+fx_get_request_muticookie
+    [Arguments]    ${referer}    ${act}    ${mtd}    ${args}  ${fxUrl}   ${cookielist}=None    ${uri}=Services.php
+    [Documentation]    支持get请求，无cookie，有cookie，单cookie，多cookie
+    ...
+    ...    默认uri为Services.php
+    ${header}    create dictionary    referer=${referer}
+    ${paralist}    create dictionary    act=${act}    mtd=${mtd}    args=${args}
+    ${cookies}    create dictionary
+    : FOR    ${cookie}    IN    @{cookielist.split(';')}    #用；分割cookie
+    \    run keyword if    '${cookie}' == '${None}'    exit for loop    #如果cookie为none，则跳出loop
+    \    ${cookie_split}=    splitbyequal    ${cookie}    #正则用第一个等号分割key-value
+    \    Set To Dictionary    ${cookies}    ${cookie_split[0]}    ${cookie_split[1]}    #set到一起
+    run keyword if    '${cookie}' == '${None}'    Create Session    fx    ${fxUrl}    ${EMPTY}
+    run keyword unless    '${cookie}' == '${None}'    Create Session    fx    ${fxUrl}    ${EMPTY}    ${cookies}
+    ${resp}=    Get Request    fx    ${uri}    ${header}    ${paralist}
+    [Return]    ${resp}
+
+get_request_general
+    [Arguments]    ${url}    ${headers}=None    ${params}=None    ${arg}=None    ${cookies}=None    ${uri}=None
+    [Documentation]    *通用get请求关键字*
+    ...
+    ...    _说明：支持任意数量header（多个header间需以;作为分割），任意数量参数(参数间以&分割)，任意数量cookie(cookie以;分割)，可指定uri(uri为空时填None)_
+    ...
+    ...
+    ...    eg.
+    ...    1.要请求这种类型的接口 _http://kfhjxact.kugou.com/api.php?c=giftpkgame&a=getSysConfig_
+    ...    | ${resp}= | *get_request_general* | http://kfhjxact.kugou.com/ | None | c=giftpkgame&a=getSysConfig | None | None | api.php |
+    ...    | ${resp}= | *get_request_general* | http://kfhjxact.kugou.com/ | params=c=giftpkgame&a=getSysConfig | uri=api.php |
+    ...
+    ...    2.要请求这种类型的接口 _http://10.12.0.56:16001/service/room/chat/receive/111_
+    ...    | ${resp}= | *get_request_general* | http://10.12.0.56:16001/service/room/chat/receive | None | None | None | None | 111 |
+    ...    | ${resp}= | *get_request_general* | http://10.12.0.56:16001/service/room/chat/receive | uri=111 | \ | \ | \ | \ |
+    ${headerlist}    create dictionary
+    ${paralist}    create dictionary
+    ${cookielist}    create dictionary
+    ##处理header
+    : FOR    ${header}    IN    @{headers.split(';')}    #用；分割cookie
+    \    run keyword if    '${header}' == '${None}'    exit for loop    #如果header为none，则跳出loop
+    \    ${header_split}=    splitbyequal    ${header}
+    \    Set To Dictionary    ${headerlist}    ${header_split[0]}=${header_split[1]}    #set到一起
+    ##处理header
+    ###处理cookie
+    : FOR    ${cookie}    IN    @{cookies.split(';')}    #用；分割cookie
+    \    run keyword if    '${cookie}' == '${None}'    exit for loop    #如果cookie为none，则跳出loop
+    \    ${cookie_split}=    splitbyequal    ${cookie}    #正则用第一个等号分割key-value
+    \    Set To Dictionary    ${cookielist}    ${cookie_split[0]}=${cookie_split[1]}    #set到一起
+    ###处理cookie
+    ####处理params
+    : FOR    ${param}    IN    @{params.split('&')}    #用&分割cookie
+    \    run keyword if    '${param}' == '${None}'    exit for loop    #如果param为none，则跳出loop
+    \    ${param_split}=    splitbyequal    ${param}    #正则用第一个等号分割key-value
+    \    Set To Dictionary    ${paralist}    ${param_split[0]}=${param_split[1]}    #set到一起
+    ####处理params
+    #####处理arg
+    ${arg_split}=    run keyword unless    '${arg}' == '${None}'    splitbyequal    ${arg}
+    run keyword unless    '${arg}' == '${None}'    Set To Dictionary    ${paralist}    ${arg_split[0]}=${arg_split[1]}
+    #####处理arg
+    run keyword if    '${cookie}' == '${None}'    Create Session    fx    ${url}    ${EMPTY}
+    run keyword unless    '${cookie}' == '${None}'    Create Session    fx    ${url}    ${EMPTY}    ${cookielist}
+    ${resp}=    Get Request    fx    ${uri}    ${headerlist}    ${paralist}
+    [Return]    ${resp}
+
+get_request_general_new
+    [Arguments]    ${url}    ${headers}=None    ${params}=None    ${arg}=None    ${cookies}=None    ${uri}=None
+    [Documentation]    *通用get请求关键字*
+    ...
+    ...    _说明：支持任意数量header（多个header间需以;作为分割），任意数量参数(参数间以&分割)，任意数量cookie(cookie以;分割)，可指定uri(uri为空时填None)_
+    ...
+    ...
+    ...    eg.
+    ...    1.要请求这种类型的接口 _http://kfhjxact.kugou.com/api.php?c=giftpkgame&a=getSysConfig_
+    ...    | ${resp}= | *get_request_general* | http://kfhjxact.kugou.com/ | None | c=giftpkgame&a=getSysConfig | None | None | api.php |
+    ...    | ${resp}= | *get_request_general* | http://kfhjxact.kugou.com/ | params=c=giftpkgame&a=getSysConfig | uri=api.php |
+    ...
+    ...    2.要请求这种类型的接口 _http://10.12.0.56:16001/service/room/chat/receive/111_
+    ...    | ${resp}= | *get_request_general* | http://10.12.0.56:16001/service/room/chat/receive | None | None | None | None | 111 |
+    ...    | ${resp}= | *get_request_general* | http://10.12.0.56:16001/service/room/chat/receive | uri=111 | \ | \ | \ | \ |
+    log    ${url} | ${headers} | ${params} | ${arg}| ${cookies} | ${uri}
+    ${headerlist}    create dictionary
+    ${paralist}    create dictionary
+    ${cookielist}    create dictionary
+    ##处理header
+    : FOR    ${header}    IN    @{headers.split(';')}    #用；分割cookie
+    \    run keyword if    '${header}' == '${None}'    exit for loop    #如果header为none，则跳出loop
+    \    ${header_split}=    splitbyequal    ${header}
+    \    Set To Dictionary    ${headerlist}    ${header_split[0]}=${header_split[1]}    #set到一起
+    ##处理header
+    ###处理cookie
+    : FOR    ${cookie}    IN    @{cookies.split(';')}    #用；分割cookie
+    \    log    用分号分隔数量:${cookie}
+    \    run keyword if    '${cookie}' == '${None}'    exit for loop    #如果cookie为none，则跳出loop
+    \    ${cookie_split}=    splitbyequal    ${cookie}    #正则用第一个等号分割key-value
+    \    log    用等号分隔key-value:${cookie_split}
+    \    Comment    ${cookie_split[1]}    Replace String    ${cookie_split[1]}    :    =
+    \    Set To Dictionary    ${cookielist}    ${cookie_split[0]}=${cookie_split[1]}    #set到一起
+    ###处理cookie
+    ####处理params
+    : FOR    ${param}    IN    @{params.split(';')}    #用&分割cookie
+    \    run keyword if    '${param}' == '${None}'    exit for loop    #如果param为none，则跳出loop
+    \    ${param_split}=    splitbyequal    ${param}    #正则用第一个等号分割key-value
+    \    Set To Dictionary    ${paralist}    ${param_split[0]}=${param_split[1]}    #set到一起
+    ####处理params
+    #####处理arg
+    ${arg_split}=    run keyword unless    '${arg}' == '${None}'    splitbyequal    ${arg}
+    run keyword unless    '${arg}' == '${None}'    Set To Dictionary    ${paralist}    ${arg_split[0]}=${arg_split[1]}
+    #####处理arg
+    log    cookie:${cookielist}
+    run keyword if    '${cookie}' == '${None}'    Create Session    fx    ${url}    ${EMPTY}
+    run keyword unless    '${cookie}' == '${None}'    Create Session    fx    ${url}    ${EMPTY}    ${cookielist}
+    ${resp}=    Get Request    fx    ${uri}    ${headerlist}    ${paralist}
+    # log    ${cookielist}
+    # log    ${resp.headers}
+    # log    ${resp.cookies}
+    # log    ${resp.text}
+    [Return]    ${resp}
+
+post_request_general
+    [Arguments]    ${url}    ${datas}={}    ${headers}=None    ${params}=None    ${cookies}=None    ${uri}=None
+    [Documentation]    *通用post请求关键字*
+    ...
+    ...    _说明：支持任意数量header（多个header间需以;作为分割），任意数量参数(参数间以&分割)，任意数量cookie(cookie以;分割)，可指定uri(uri为空时填None)_
+    ...
+    ...    eg:
+    ...
+    ...    1.soa 接口
+    ...    | curl -H "protocol:json" -d '[1,"sendSms",1,1,{"1":{"rec":{"1":{"str":"13632483224"},"2":{"str":"notifysms"},"3":{"str":"聊天服务器重启了123123123123"}}}}]' 'http://192.168.0.48:8888/com.kugou.srv.utils.sms.SmsSendService' |
+    ...
+    ...    | ${resp}= | post_request_general | ${soaUrl_sendsms} | [1,"sendSms",1,1,{"1":{"rec":{"1":{"str":"13632483224"},"2":{"str":"notifysms"},"3":{"str":"聊天服务器重启了123123123123"}}}}] | protocol=json |
+    ...
+    ...
+    ...    2.唱模块私聊接口
+    ...    | http://10.1.1.232/sing7/chat/json/v2/own_message_privatechat?playerid={senderid}\&targetid={recid}\&type=1\&content=\"{content}\" |
+    ...
+    ...    | ${resp}= | post_request_general | ${chatUrl} | / | None | playerid=${senderid}&targetid=${recid}&type=1&content="abcdefg123123"&sign=${sign} | None | own_message_privatechat |
+    ...    | ${resp}= | post_request_general | ${chatUrl} | params=playerid=${senderid}&targetid=${recid}&type=1&content="abcdefg123123"&sign=${sign} | uri=own_message_privatechat |
+    ${headerlist}    create dictionary
+    ${urilist}=    run keyword if    '${params}' == '${None}'    set variable    ${uri}
+    ${urilist}=    run keyword unless    '${params}' == '${None}'    set variable    ${uri}?${params}
+    ${cookielist}    create dictionary
+    #    ${datalist}=    create dictionary
+    ${datalist}=    set variable    ${datas}
+    #处理headers
+    : FOR    ${header}    IN    @{headers.split(';')}    #用；分割cookie
+    \    run keyword if    '${header}' == '${None}'    exit for loop    #如果header为none，则跳出loop
+    \    ${header_split}=    splitbyequal    ${header}
+    \    Set To Dictionary    ${headerlist}    ${header_split[0]}=${header_split[1]}    #set到一起
+    #处理headers
+    ##处理cookie
+    : FOR    ${cookie}    IN    @{cookies.split(';')}    #用；分割cookie
+    \    run keyword if    '${cookie}' == '${None}'    exit for loop    #如果cookie为none，则跳出loop
+    \    ${cookie_split}=    splitbyequal    ${cookie}    #正则用第一个等号分割key-value
+    \    Set To Dictionary    ${cookielist}    ${cookie_split[0]}=${cookie_split[1]}    #set到一起
+    ##处理cookie
+    #    ${datas_split}=    run keyword unless    '${datas}' == '${None}'    splitbyequal    ${datas}
+    #    run keyword unless    '${datas}' == '${None}'    Set To Dictionary    ${datalist}    ${datas_split[0]}    ${datas_split[1]}
+    run keyword if    '${cookie}' == '${None}'    Create Session    fx    ${url}
+    run keyword unless    '${cookie}' == '${None}'    Create Session    fx    ${url}    ${EMPTY}    ${cookielist}
+    log    输出完整路径:
+    log    ${url}${urilist}${datalist}
+    ${resp}=    Post Request    fx    ${urilist}    ${datalist}    ${headerlist}
+    #    ${resp}=    _post_request    fx    /    ${datalist}    ${headerlist}
+    [Return]    ${resp}
+
+curl_post_request1
+    [Arguments]    ${body}    ${url}
+    [Documentation]    curl post request
+    ...
+    ...    return value: ${resp}
+    ...
+    ...
+    ...    eg:
+    ...    | ${resp}= | kvnsoa_post_request | [1,"cset",1,1,{"1":{"rec":{"1":{"i32":10098},"2":{"str":"t1"},"3":{"str":"123456"}}}}] | http://192.168.0.141:16013/kvservice |
+    ${header}=    create dictionary    protocol=json
+    ${data}=    set variable    ${body}
+    Create Session    fx    ${url}
+    ${resp}=    Post Request    fx    ${EMPTY}    ${data}    ${header}
+    [Return]    ${resp}

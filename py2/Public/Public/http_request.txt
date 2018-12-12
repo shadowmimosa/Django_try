@@ -1,0 +1,335 @@
+*** Settings ***
+Library           Collections
+Library           RequestsLibrary
+Library           pymysql
+Library           DatabaseLibrary
+Library           String
+Library           HttpLibrary.HTTP
+Library           ../Lib/tool_reptile.py
+Library           ../Lib/tools_library.py
+Library           ../Lib/Usertool_01.py
+*** Variable ***
+${signOnline}          A4729E62-3701-48C3-A15D-7391838FA186    #可以放置一些公共参数；
+${signTest}            a9ff6970eb814e6894389ca8b12f3030    #可以放置一些公共参数；
+${pwd}                 67889911    #可以放置一些公共参数；
+${loginTest}           http://api-test.thejoyrun.com
+${loginOnline}         http://api.thejoyrun.com
+${Gen_dict}            &{EMPTY}
+${fxUrl}               http://fanxing.kugoucom
+*** Keywords ***
+
+sorted_request_data
+    [Arguments]     ${map}    ${tpye}=None
+    [Documentation]    将map请求的参数转换为字符串或json格式,type为编码类型,默认为unicode编码，decode为unicode解码（用于中文展示）； 
+    [Timeout]    30 seconds
+    log   sorted_request_data Start ......
+    log  Map原字符：
+    log  【${map}】
+    ${map_list_before}    evaluate    sorted(${map}.iteritems())
+    log  排序后：
+    log  【${map_list_before}】   
+    ${map_list_URL}   Evaluate    urllib.urlencode(${map_list_before})    urllib
+    log  排序->URL编码后：
+    log  【${map_list_URL}】   
+    ${data_out_Unicode}   Convert To String   ${map_list_URL}
+    #?${data_out_Unicode}   charconver   ${map_list_URL}
+    log  排序->URL编码->unicode编码后：
+    log  【${data_out_Unicode}】    
+    ${data_out_UTF8}    charconver    ${data_out_Unicode}
+    log   排序->URL编码->unicode编码->UTF-8解码后：
+    log   【${data_out_UTF8}】
+    ${data_out}  Run Keyword If  '${tpye}'=='UTF8'   
+    ...     set variable  ${data_out_UTF8}   ELSE
+    ...     set variable  ${data_out_Unicode}
+    log   sorted_request_data End ......
+    [Return]    ${data_out}
+
+
+
+joyrun_POST_heardsession
+    [Arguments]    ${username}    ${pwd}   ${Base_URL}=None
+    [Documentation]    Joyrun login 
+	[Timeout]    30 seconds
+    log    -----------------cookies mothod is log start1;--------------------------
+    log    -----------------cookies mothod is log start2;--------------------------
+    ${env}    Env_URL    ${Base_URL}
+    ${login_URL}    Run Keyword If   '${env}'=='Test'   set variable   ${loginTest}   ELSE   set variable   ${loginOnline}  
+    log  运行环境是${login_URL}
+    ${timestamp}    GetServertime    ${login_URL}
+    ${Url}=    set variable    ${login_URL}
+    ${loginUri}=    set variable    /user/login/normal
+    ${pwdmd5}=    encrypt    ${pwd}    md5    32
+    ${keydic}    create dictionary    deviceToken=${deviceToken}
+    set to dictionary    ${keydic}    username=${username}    
+    set to dictionary    ${keydic}    pwd=${pwdmd5}
+    set to dictionary    ${keydic}    timestamp=${timestamp}
+    #排序及格式处理
+    ${signparam}    sorted_request_data    ${keydic}
+    #对中文做处理，将unicode字符解码成对应的中文字符
+    #log    signparam===${signparam}
+    ${signkey1}=    set variable    ${signparam}${appkey1}
+    ${signkey2}=    set variable    ${signparam}${appkey2}
+    #log    signkey1=====${signkey1}
+    #log    signkey2=====${signkey2}
+    #排序及格式处理
+    ${sign1}=    encrypt    ${signkey1}    md5    32
+    ${sign2}=    encrypt    ${signkey2}    md5    32
+    #通用签名
+    ${sign1}    Run Keyword If   '${env}'!='Online'   set variable   ${signTest}   ELSE   set variable   ${signOnline}
+    ${_sign} =    Convert To Uppercase    ${sign1}
+    log   通用签名：${_sign}
+    ${signature} =    Convert To Uppercase    ${sign2}
+    log    业务签名：${signature}
+    ${header}    create dictionary    APPVERSION=${APPVERSION}
+    set to dictionary    ${header}    User-Agent=${UserAgent}
+    set to dictionary    ${header}    APP_DEV_INFO=${APPDEVINFO}
+    set to dictionary    ${header}    Content-Type=application/x-www-form-urlencoded
+    set to dictionary    ${header}    SYSVERSION=${SYSVERSION}
+    set to dictionary    ${header}    _sign=${_sign}
+    set to dictionary    ${header}    MODELTYPE=${MODELTYPE}
+    log    登录前传参url=${Url}${loginUri}
+    log    登录前的heard=${header}
+    log    登录前的body=data=pwd=${pwdmd5}&timestamp=${timestamp}&username=${username}
+    ${data}  Set Variable  deviceToken=${deviceToken}&pwd=${pwdmd5}&signature=${signature}&timestamp=${timestamp}&username=${username}
+    Create Session    joyrun    ${Url}    headers=${header}
+    ${resplogin}=    Post Request    joyrun    /user/login/normal   data=${data}     
+    ##...     ${EMPTY}   ${EMPTY}   None   ${True}   ${EMPTY}   
+    log    ${resplogin.headers}
+    #log    ${resplogin.json}
+    ${login_content}=    charconver    ${resplogin.content}
+    ${login_ret}     Get Json Value   ${login_content}   /ret
+    ${login_ret}     Replace String    ${login_ret}    "    ${EMPTY}
+    ${login_error}   Run Keyword If   ${login_ret}!=0   Get Json Value   ${login_content}   /msg
+    Run Keyword If   ${login_ret}==0   log json  ${login_content}       
+    ...    ELSE   log    哈哈，在登录就出错了！！！！！失败原因:${login_error}
+    ${userdata}   Get Json Value    ${login_content}    /data/user
+    ${sid}    Get Json Value    ${login_content}    /data/sid
+    ${uid}    Get Json Value    ${login_content}    /data/user/uid
+    ${nick}    Get Json Value    ${login_content}    /data/user/nick
+    ${ypcookie}    set variable    uid=${uid}&sid=${sid}
+    ${ypcookie}=    Replace String    ${ypcookie}    "    ${EMPTY}
+	${sid}=    Replace String    ${sid}    "    ${EMPTY}
+    ${uid}=    Replace String    ${uid}    "    ${EMPTY}	
+    ${nick}=    Replace String    ${nick}    "    ${EMPTY}   
+    log    登录后用户基础信息为：nick==${nick}、uid==${uid}、sid==${sid}
+    log    登录后的ypcookie==${ypcookie}
+    log    登录后用户userinfo信息为：
+    log json   ${userdata}
+    ${heards_dict}=    create dictionary
+    set to dictionary    ${heards_dict}    uid=${uid}
+    set to dictionary    ${heards_dict}    sid=${sid}
+    set to dictionary    ${heards_dict}    ypcookie=${ypcookie}
+    set to dictionary    ${heards_dict}    timestamp=${timestamp}
+    set to dictionary    ${heards_dict}    userinfo=${userdata}   
+    Log Dictionary       ${heards_dict}
+    log  将登录成功的用户信息设置为全局变量
+    ${env}    Run keyword If    "${login_URL}"=="http://api-test.thejoyrun.com"    set variable    Test
+    ...    ELSE    set variable    Online
+    set to dictionary      ${usersinfo_dict}    ${env}${userName}=${heards_dict}
+    set global variable    &{usersinfo_dict}    &{usersinfo_dict}
+    log dictionary   ${usersinfo_dict} 
+    log    -------------------------------heards_dict mothod is log End1 ---------
+    log    -------------------------------heards_dict mothod is log End2 ---------
+    [Return]    ${heards_dict}
+
+
+
+Gen_Request
+    [Arguments]    ${URL}   ${method}=None   ${map}=None   ${type}=None   ${heards}=None     
+    [Documentation]    通用的http请求的方法; url为url的地址栏，method为Post,Get方法；Map为提交的参数和数据，此为json字典格式{Key1:Value1,key2:Value2}，type为提交数据的格式（data,pama);heards为请求头中的参数和值，传值方式为：{Key1:Value1,key2:Value2}；
+    [Timeout]    30 seconds
+    log  URL为：${URL} 
+    log  method为：${method} 
+    log  map为：${map}
+    log  type为：${type} 
+    log  heards为：${heards} 
+    log  开始处理Host和Path...
+    ${URList}   Evaluate   ${URL}.replace("://","JoyRun").split("/")
+    ${Host}   Get From List    ${URList}   0
+    ${Host}   Evaluate   ${Host}.replace("JoyRun","://")  
+    ${Path}   Replace String     ${URL}     ${Host}    ${EMPTY}
+    log   Host和Path处理完毕！！
+    log   开始处理Heards...
+    ${Gen_HearderPama}   Run Keyword IF  'Gen_Headers'  IN  ${heards}   
+    ...     Get Json Value    ${heards}   /Gen_Headers
+    ${header}   Run Keyword IF  'Gen_Hearder'  IN  ${header} 
+    ...     Gen_Hearder    ${Gen_HearderPama} 
+    ...     ELSE   Set Variable    ${heards}
+    log    headers 处理完毕！！
+
+    #| data=None | params=None | headers=None | files=None | allow_redirects=None | timeout=None
+    Create Session    Gen    ${Host}    headers=${header}
+    ${resplogin}    post Request    Gen     
+
+
+Gen_Headers
+    [Arguments]    ${jsondatas}       
+    [Documentation]    通用的Headers处理方法，Headers_URL,Headers_type,Headers_method,Headers_Map,Headers_header为heards需要URL请求用;rebody,reheaders，这些字段传的方式为json格式；rebody为从返回body中获取的字段（需要返回多个时用英文逗号隔开），reheaders为从返回的headers中获取的字段（需要返回多个时用英文逗号隔开，默认为cookie）；Jsondatas=
+    ...     {"Headers_URL":"value1","Headers_type":"value2","Headers_Map":"value3",
+    ...     "Headers_method":"value3","Headers_header":"value4",
+    ...     "rebody":"value5","reheaders":"value6"};
+    ...     当调用第3方方法处理header时，传字段名：threeMethod,值传:方法名,
+    ...     threeMethodPama：方法参数集;
+    ...     Jsondatas={"threeMethod":"方法名","threeMethodPama":参数集"}
+    log    Gen_Hearder start ...
+    ${Gen_Headers_type}  Run Keyword IF   "Headers_URL"  IN   ${jsondatas}   
+    ...     Set Variable   ${1}
+    ...     ELSE   Set Varible   ${0}
+    log   开始处理Headers的参数...
+    ${Headers_URL}   Run Keyword IF   "Headers_URL"  IN   ${jsondatas}   
+    ...     Get Json Value    ${jsondatas}   /Headers_URL
+     ${Headers_type}   Run Keyword IF   "Headers_type"  IN   ${jsondatas}    
+    ...     Get Json Value    ${jsondatas}   /Headers_type
+    ${Headers_method}   Run Keyword IF   "Headers_method"  IN   ${jsondatas}    
+    ...     Get Json Value    ${jsondatas}   /Headers_method
+    ${Headers_Map}    Run Keyword IF   "Headers_Map"  in   ${jsondatas}    
+    ...     Get Json Value    ${jsondatas}   /Headers_Map
+    ${Headers_header}    Run Keyword IF   "Headers_header"  IN   ${jsondatas}    
+    ...     Get Json Value    ${jsondatas}   /Headers_header
+    ${threeMethod}   Run Keyword IF   "threeMethod"  IN   ${jsondatas}
+    ...     Get Json Value    ${jsondatas}   /threeMethod
+    ${threeMethodPama}   Run Keyword IF   "threeMethodPama"  IN   ${jsondatas}
+    ...     Get Json Value    ${jsondatas}   /threeMethodPama
+    ${reheaders}   Run Keyword IF   "reheaders"  IN   ${jsondatas}
+    ...     Get Json Value    ${jsondatas}   /reheaders
+    ${reheaderslist}  Run Keyword IF  "reheaders"  IN   ${jsondatas}
+    ...      Evaluate   ${reheaders}.split(",")
+    ${rebody}   Run Keyword IF   "rebody"  IN   ${jsondatas}
+    ...     Get Json Value    ${jsondatas}   /rebody
+    ${rebodylist}  Run Keyword IF  "rebody"  IN   ${jsondatas}
+    ...      Evaluate   ${rebody}.split(",")
+    log   Headers参数处理完毕！！
+    log   开始网络请求或调用自定方法处理...
+    ${Header}   Create Dictionary
+    ${Hearderesp}   Run Keyword IF   ${Gen_Headers_type}==1
+    ...     Gen_Request   ${Headers_URL}  ${Headers_method}      
+    ...     ${Headers_Map}   ${Headers_type}     ${Headers_header}
+    ...     ELSE     ${threeMethod}    ${threeMethodPama}
+    ${statuscode}    Run Keyword IF   ${Gen_Headers_type}==1
+    ...      Set Variable  ${Hearderesp.status_code}
+    ...      Set Variable  ${200}
+    ${headersdict}   Run Keyword IF   ${Gen_Headers_type}==1 and ${statuscode}==200
+    ...      set variable    ${Hearderesp.headers}
+    ${Set_cookie}   Run Keyword IF   ${Gen_Headers_type}==1 and ${statuscode}==200 
+    ...     Get Json Value   ${Hearderesp.headers}   /Set-Cookie
+    Run Keyword IF   ${Gen_Headers_type}==1 and ${statuscode}==200
+    ...     set to dictionary  ${Header}   Cookie=${Set_cookie}
+    Run Keyword IF   ${Gen_Headers_type}==1  and ${statuscode}==200
+    ...      ${Header}   list_From_json   ${reheaderslist}   ${headersdict}  ${Header}
+    Run Keyword IF   ${Gen_Headers_type}==1 and ${statuscode}==200
+    ...      ${Header}  list_From_json  ${rebodylist}  ${Hearderesp.content}    
+    ...      ${Header}  
+    ${Headerstring}   Run Keyword IF   ${Gen_Headers_type}==1 and ${statuscode}==200
+    ...      Dict to Json   ${Header}   {}
+    ...      ELSE IF   ${Gen_Headers_type}==1 and ${statuscode}!=200
+    ...      Set Varibale  {"msg":"Headers No Success!!"}
+    ...      ELSE   Set Variable   ${Hearderesp} 
+    log     处理完毕!!
+    log     Gen_Hearder End !!!
+    [Return]   ${Hearder}
+
+
+lists_To_dict
+    [Arguments]    ${keylist}  ${valuelist}  ${dict}
+    [Documentation]  将keylist和valuelist 一一对应放到dict字典中；
+    log  lists_To_dict start ....
+    log list     ${keylist}
+    log list     ${valuelist}
+    log dictionary  ${dict}
+    ${num}   Evaluate  len(${keylist})
+    ${i}  set variable  ${0}
+    :FOR  ${Key}  in  ${keylist}
+    \   set to dictionary   ${dict}   ${Key}=${valuelist[${i}]}
+    \   ${i}   Evaluate   ${i}+1
+    \   log  i==${i}
+    \   log  dict===${dict}
+    log  lists_To_dict End!!!
+    [Return]   ${dict}
+
+list_From_json
+    [Arguments]    ${keylist}   ${jsonstring}   ${redicts}=None
+    [Documentation]  从Json串中取一系列key的value值，并组成dict返回；
+    log  list_From_json start ...
+    ${redict}   Run Keyword IF  ${redicts}==None   create dictionary
+    ...         ELSE   Copy Dictionary    ${redicts} 
+    log dictionary   ${redict}
+    :FOR  ${Key}  IN  @{keylist}
+    \   ${index}   Get Count    ${jsonstring}   ${Key}
+    \   ${valuestring}  Run Keyword IF  ${index}>0
+    \    ...    Get Json Value  ${jsonstring}  /${Key}
+    \    ...    ELSE   Set Variable   ${EMPTY}
+    \   Set to Dictionary   ${redict}   ${Key}=${valuestring}
+    log dictionary   ${redict}
+    log  list_From_json End !!!
+    [Return]   ${redict}
+
+Dict to Json
+    [Arguments]   ${Dicts}  ${Jsonstrings}=None
+    [Documentation]  将字典转换为json字符串，并拼接在Jsonstring字符串中
+    log  Dict to Json start ...
+    ${dictstring}   Evaluate   json.dumps(${Dicts})   json
+    log dictionary    ${Dicts}
+    log json  ${dictstring} 
+    #${dictstring}   Json_to_Dict   ${Dicts}
+    ${Jsonstring}  Run Keyword IF  "${Jsonstrings}"!="None"    
+    ...     Set Variable  ${Jsonstrings}
+    ...     ELSE   Set Variable   ${dictstring} 
+    ${Jsonstring}   Run Keyword IF  "${Jsonstrings}"!="None"    
+    ...     Replace String   ${Jsonstring}  }${EMPTY}    ,${dictstring}}
+    ...     ELSE   Set Variable   ${Jsonstring}
+    ${Jsonstring}   Run Keyword IF  "${Jsonstrings}"!="None"    
+    ...     Replace String   ${Jsonstring}  ]${EMPTY}    ,${dictstring}]
+    ...     ELSE   Set Variable   ${Jsonstring}
+    Run Keyword IF  "${Jsonstrings}"=="None"     log Json   ${Jsonstring} 
+    log  Dict to Json End !!!
+    [Return]   ${Jsonstring}
+
+List to Str
+    [Arguments]   ${Lists}   ${String}=None
+    [Documentation]  将列表转换字符串，并拼接在String字符串之后
+    log   List to Str start ...
+    log    list===${Lists}
+    log    String==${String}
+    @{List}   Evaluate   list(${Lists})
+    ${str1}   Set Variable  ${EMPTY}
+    :FOR  ${idex}  IN  @{List}
+    \     log    idex==${idex}
+    \     ${intx}    Evaluate   type(${idex})==int 
+    \     ${listx}   Evaluate   type(${idex})==list
+    \     @{idexList}   Run Keyword IF  ${listx}>0   Evaluate   list(${idex})
+    \     Run Keyword IF  ${listx}>0   log   ${idexList[0]}
+    \     ${dictx}   Evaluate   type(${idex})==dict 
+    \     &{idexdict}   Run Keyword IF  ${dictx}>0   Evaluate   dict(${idex})
+    \     ${str1}    Run Keyword IF  ${intx}==True
+    \     ...  Set Variable   ${str1}${idex},
+    \     ...  ELSE IF  ${listx}==True
+    \     ...  List to Str   ${idexList}   ${str1}
+    \     ...  ELSE IF  ${dictx}>0 
+    \     ...  Dict to Json  ${idexdict}   ${str1}  
+    \     ...  ELSE   Set Variable   ${str1}${idex},
+    ${String}   Run Keyword IF  "${String}"!="None"      
+    ...         replace string   ${String}  }${EMPTY}    ,${str1}}
+    ${String}   Run Keyword IF  "${String}"!="None"   
+    ...         replace string   ${String}  ]${EMPTY}    ,${str1}]
+    ${String}   Run Keyword IF  "${String}"!="None"    
+    ...         replace string   ${String}  ,}${EMPTY}   }${EMPTY}
+    ${String}   Run Keyword IF  "${String}"!="None"   
+    ...         replace string   ${String}  ,]${EMPTY}   ]${EMPTY}
+    ${String}   Run Keyword IF  "${String}"!="None"    
+    ...         replace string   ${String}  ,${EMPTY}   ${EMPTY}
+    ${String}   Run Keyword IF  "${String}"!="None"     
+    ${String}    Run Keyword IF  "${String}"!="None"   
+    ...         Set Variable     ${String1} 
+    ...         ELSE  Set Variable    ${str1}
+    log   String==${String}
+    log   List to Str End !!!
+    [Return]   ${String}
+
+
+
+
+
+
+
+
+
