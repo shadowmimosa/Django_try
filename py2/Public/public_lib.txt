@@ -1,12 +1,12 @@
 *** Settings ***
 Documentation     公共资源、公共变量、第三方库
-Library           Collections
-Library           RequestsLibrary
-Library           pymysql
-Library           DatabaseLibrary
-Library           String
-Library           HttpLibrary.HTTP
-Library           ../Public/Lib/tools_library.py
+Library    Collections
+Library    RequestsLibrary
+Library    pymysql
+Library    DatabaseLibrary
+Library    String
+Library     HttpLibrary.HTTP
+Library     ../Public/Lib/tools_library.py
 Library           ../Public/Lib/Usertool_01.py
 Library           ../Public/Lib/tool_reptile.py
 Library           ../Public/Lib/Verification_Field.py
@@ -82,8 +82,8 @@ thejoyrun_Keywords
     ...    可为None的参数在中间时，如userName pwd 不需要传时要用None代替
     [Timeout]    30 seconds
     log    thejoyrun_Keywords Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${maps1}    create dictionary
     ${Retry_order}    Run Keyword If    '${Retry_order}'=='None'    set variable    ${Retry_Pub}
     ...    ELSE    set variable    ${Retry_order}
@@ -178,8 +178,8 @@ Send_itchatmsg
     [Arguments]    ${name}    ${msg}    ${sencod}
     [Documentation]    调用微信发信息
     log    Send_itchatmsg Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     Evaluate    itchat.auto_login(hotReload=True)    itchat
     ${myfriend}    Evaluate    itchat.search_friends(name=u'${name}')    itchat
     log    ${myfriend}
@@ -228,8 +228,8 @@ Textcontrl
     [Arguments]    ${type}=None
     [Documentation]    根据类型做不同的随机返回文本字符串；
     log    Textcontrl Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "UTF-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "UTF-8" )    sys
     ${yyyy1}    ${mm1}    ${dd1}    ${hour1}    ${min1}    ${sec1}    Get Time
     ...    year,month,day,hour,min,sec
     ${yyyy}    Evaluate    int(${yyyy1})

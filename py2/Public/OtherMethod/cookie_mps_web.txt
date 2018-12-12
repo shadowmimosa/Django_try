@@ -1,10 +1,10 @@
 *** Settings ***
-Library           Collections
-Library           RequestsLibrary
+#Library    Collections
+#Library    RequestsLibrary
 Library           ../Lib/tools_library.py
 Resource          http_request.txt
-Library           HttpLibrary.HTTP
-Library           String
+#Library     HttpLibrary.HTTP
+#Library    String
 
 *** Keywords ***
 fx_mps_get_login_cookie
@@ -31,8 +31,8 @@ callback_token_KugooID
     [Arguments]    ${fxUrl}    ${username}    ${password}
     [Documentation]    断言：
     ...    1、从网站登录的cookie中获取返回kugouid和token值
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${cookie}    fx_mps_get_login_cookie    ${fxUrl}    ${username}    ${password}
     log    ${cookie}
     ${list}    Split String    ${cookie}    &

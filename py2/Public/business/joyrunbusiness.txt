@@ -1,10 +1,10 @@
 *** Settings ***
 Documentation     JOYRUN的业务关键字
-Library           Collections
-Library           RequestsLibrary
-Library           pymysql
-Library           DatabaseLibrary
-Library           String
+#Library    Collections
+#Library    RequestsLibrary
+#Library    pymysql
+#Library    DatabaseLibrary
+#Library    String
 Library           ../Lib/tools_library.py
 Resource          ../OtherMethod/cookie_operation.txt
 Resource          ../Public/http_request.txt
@@ -45,8 +45,8 @@ Getrunrecodeinfo
     [Arguments]    ${fid}    ${wgs}    ${userName}    ${pwd}=None     ${Base_URL}=None
     [Documentation]    Run/GetInfo.aspx某跑步记录数据详情,如跑步记录不存在则，请求fid=181392202
     log   Getrunrecodeinfo Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${api_URL}  Run Keyword IF  "${Base_URL}"=="None"   
     ...     Set Variable   ${api_URL}
     ...     ELSE  Set Variable   ${Base_URL}
@@ -61,7 +61,7 @@ Getrunrecodeinfo
     ${resp}=    thejoyrun_postd    ${path}    ${maps}    ${userName}    ${api_URL}   ${pwd}
     ${Getrunrecodecontent}=    charconver    ${resp.content}
     ${respret}    get json value    ${Getrunrecodecontent}    /ret
-    #${respruninfo}    Run Keyword If    ${respret}<>"0"    Getrunrecodeinfo    181392202    ${wgs}    ${userName}
+    #${respruninfo}    Run Keyword If    ${respret}!="0"    Getrunrecodeinfo    181392202    ${wgs}    ${userName}
     ...    # ELSE    set variable    ${Getrunrecodecontent}
     ${respruninfo}    set variable    ${Getrunrecodecontent}
     log    ---输出返回内容----
@@ -114,7 +114,7 @@ feedListBasicBulk_fid
     \    ${fidtextlen}    evaluate    len(${fidtext})
     \    ${feedfilter}    Run Keyword If    ${min}<=${findvalue}<=${max} and ${fidtextlen}>0    Get From List    ${fidtext}    0
     \    ...    ELSE    set variable    zzqrunjoyrun9527
-    \    ${feed}    Run Keyword If    "${feed}"<>"${EMPTY}"    set variable    ${feed},${feedfilter}
+    \    ${feed}    Run Keyword If    "${feed}"!="${EMPTY}"    set variable    ${feed},${feedfilter}
     \    ...    ELSE    set variable    ${feedfilter}
     \    ${feed}    replace string    ${feed}    zzqrunjoyrun9527,    ${EMPTY}
     \    ${feed}    replace string    ${feed}    ,zzqrunjoyrun9527    ${EMPTY}
@@ -153,7 +153,7 @@ getHotsFeedList_fids
     \    ${hotdic}    Get From List    ${hostlist}    ${index}
     \    ${hotdic}    replace string    ${hotdic}    "fid":    ${EMPTY}
     \    ${hotdic}    replace string    ${hotdic}    ${SPACE}    ${EMPTY}
-    \    ${keykeysting}    Run Keyword If    '${keykeysting}'<>'${EMPTY}'    set variable    ${keykeysting},${hotdic}
+    \    ${keykeysting}    Run Keyword If    '${keykeysting}'!='${EMPTY}'    set variable    ${keykeysting},${hotdic}
     \    ...    ELSE    set variable    ${hotdic}
     \    ${hotfids}    replace string    ${keykeysting}    zzqrunjoyrun9527,    ${EMPTY}
     \    ${hotfids}    replace string    ${keykeysting}    ,zzqrunjoyrun9527    ${EMPTY}
@@ -186,7 +186,7 @@ FourTopicList_TopicName
     \    ${TopfourList}    Get Regexp Matches    ${FourTopicdatalist[${topindex}]}    "topicName":"(.*)"    1
     \    log    ${TopfourList[0]}
     \    ${topicNamesting}    Get From List    ${TopfourList}    0
-    \    ${topicNameKeyspit}    Run Keyword If    "${topicNameKeyspit}"<>"${EMPTY}"    set variable    ${topicNameKeyspit},${topicNamesting}
+    \    ${topicNameKeyspit}    Run Keyword If    "${topicNameKeyspit}"!="${EMPTY}"    set variable    ${topicNameKeyspit},${topicNamesting}
     \    ...    ELSE    set Variables    ${topicNamesting}
     \    ${topicNameKeyspit}    replace string    ${topicNameKeyspit}    ,,    ,
     #${topicNameKeyspit}    replace string    ${topicNameKeyspit}    约定跑,    ${EMPTY}
@@ -224,7 +224,7 @@ TopicDetail_Fids
     ${TopicDetaildata}    Run Keyword If    ${feedscount}==0    get json value    ${TopicDetailcontent}    /data/feeds
     ...    ELSE    set variable    "fid":0
     ${Fids}    FilterList    ${TopicDetaildata}    dateline,${timemin},${timemax}    fid
-    ${fidlen}    Run Keyword If    '${Fids}'<>'0'    Get Count    ${Fids}    ,
+    ${fidlen}    Run Keyword If    '${Fids}'!='0'    Get Count    ${Fids}    ,
     ...    ELSE    set variable    -1
     ${fidnum}    evaluate    int(${fidlen})+1
     Run Keyword If    '${Fids}'=='0'    log    ================该话题type:${type}列表没有跑步记录=============
@@ -236,8 +236,8 @@ FeedListv5_Fids
     [Arguments]    ${userName}   ${pwd}=None   ${Base_URL}=None
     [Documentation]    *我的动态列表前10条*
     log   FeedListv5_Fids Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${api_URL}  Run Keyword IF  "${Base_URL}"=="None"   
     ...     Set Variable   ${api_URL}
     ...     ELSE  Set Variable   ${Base_URL}
@@ -265,7 +265,7 @@ FeedListv5_Fids
     \    ${feedlen}    evaluate    len(${feedabcd})
     \    ${feeds}    Run Keyword If    ${feedlen}>=1    Get From List    ${feedabcd}    0
     \    ...    ELSE    set variable    zzqrunjoyrun9527
-    \    ${feed}    Run Keyword If    "${feed}"<>"${EMPTY}"    set variable    ${feed},${feeds}
+    \    ${feed}    Run Keyword If    "${feed}"!="${EMPTY}"    set variable    ${feed},${feeds}
     \    ...    ELSE    set variable    ${feeds}
     \    ${feed}    replace string    ${feed}    zzqrunjoyrun9527,    ${EMPTY}
     \    ${feed}    replace string    ${feed}    ,zzqrunjoyrun9527    ${EMPTY}
@@ -280,8 +280,8 @@ UserRunList_Fid
     ...               ${pwd}=None    ${Base_URL}=None
     [Documentation]    userRunList用户本人的跑步记录基本验证,year 年份，filters 为过滤规则格式:lasttime,1521603644,1621603644,表示查找字段lasttime的值在1521603644-1621603644之间的记录，多个过滤条件用/隔开，最多支持三个条件；Returnfield为需要返回的字段值，例如：fid则返回符合条件的fid值；
     log   UserRunList_Fid Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${api_URL}  Run Keyword IF  "${Base_URL}"=="None"   
     ...     Set Variable   ${api_URL}
     ...     ELSE  Set Variable   ${Base_URL}
@@ -314,8 +314,8 @@ oneclickdetails_userinfo
     [Arguments]    ${returnfield}    ${userName}  ${pwd}=None   ${Base_URL}=None
     [Documentation]    通过userName 返回用户相关字段信息；all返回datas中所有字段的值；uid:返回uid；address:返回地址；nick返回昵称；name返回真实姓名；province返回省份；city返回地区；cellnumber返回电话号码；email返回邮箱；birthday返回生日YYYYMMDD；
     log   oneclickdetails_userinfo Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${api_URL}  Run Keyword IF  "${Base_URL}"=="None"   
     ...     Set Variable   ${api_URL}
     ...     ELSE  Set Variable   ${Base_URL}
@@ -337,8 +337,8 @@ getMyCrewInfo
     [Arguments]   ${returnfield}  ${userName}      ${pwd}=None   ${Base_URL}=None
     [Documentation]    getMyCrewInfo返回本人跑团相关信息,crewid返回跑团id,uid返回uid,nodeType返回nodeType,adminLevel返回adminLevel,jointime返回加入跑团时间,totalmember返回跑成员数，endNodeid返回endNodeid，role返回roleid,all返回datas中所有字段的值
     log   getMyCrewInfo Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${crew_muilt_URL}  Run Keyword IF  "${Base_URL}"=="None"   
     ...     Set Variable   ${crew_muilt_URL}
     ...     ELSE  Set Variable   ${Base_URL}
@@ -349,7 +349,7 @@ getMyCrewInfo
     ${content}=    charconver    ${resp.content}
     log json    ${resp.content}	
 	${data}     get json value    ${content}    /data
-    ${fieldvalue}    Run Keyword If    '${returnfield}'=='all' and '${data}'<>'${EMPTY}'   set variable    ${data}    ELSE IF  '${data}'=='${EMPTY}'  set variable   0      ELSE    get json value    ${content}    /data/${returnfield}
+    ${fieldvalue}    Run Keyword If    '${returnfield}'=='all' and '${data}'!='${EMPTY}'   set variable    ${data}    ELSE IF  '${data}'=='${EMPTY}'  set variable   0      ELSE    get json value    ${content}    /data/${returnfield}
     log   getMyCrewInfo End ......
     [Return]    ${fieldvalue}	
 	
@@ -358,8 +358,8 @@ check_runfeed
     [Documentation]    check/run查询跑步记录是不是发过动态
     [Timeout]    30 seconds
     log   check_runfeed Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${api_URL}  Run Keyword IF  "${Base_URL}"=="None"   
     ...     Set Variable   ${api_URL}
     ...     ELSE  Set Variable   ${Base_URL}
@@ -383,7 +383,7 @@ check_runfeed
     ...    ELSE    set variable    0
     ${istrue}    Convert To String    ${istrue}
     ${passfid}   Run Keyword If    '${istrue}'=='false'    set variable    ${fid}
-    ...    ELSE IF    '${istrue}'=='true' and '${fids}'<>'${EMPTY}'    check_runfeed    ${fids}    ${userName}  ${pwd}
+    ...    ELSE IF    '${istrue}'=='true' and '${fids}'!='${EMPTY}'    check_runfeed    ${fids}    ${userName}  ${pwd}
     ...    ELSE IF    '${istrue}'=='true' and '${fids}'=='${EMPTY}'    set variable    0
     ...    ELSE   set variable    0
     log   check_runfeed End ......
@@ -435,8 +435,8 @@ marathonlist_marathonIds
     ...           ${pwd}=None   ${Base_URL}=None
     [Documentation]    marathon/online-mls-list 线上马的列表
     log   marathonlist_marathonIds Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${marathon_URL}  Run Keyword IF  "${Base_URL}"=="None"   
     ...     Set Variable   ${marathon_URL}
     ...     ELSE  Set Variable   ${Base_URL}
@@ -456,8 +456,8 @@ Get_shoe_id
     [Arguments]       ${userName}    ${pwd}=None   ${Base_URL}=None
     [Documentation]    通过调brand-list和brand-shoe-list 接口随机选中一个shoe_id的公共Keywords关健字
     log   Get_shoe_id Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${wear_URL}  Run Keyword IF  "${Base_URL}"=="None"   
     ...     Set Variable   ${wear_URL}
     ...     ELSE  Set Variable   ${Base_URL}
@@ -474,7 +474,7 @@ Get_shoe_id
     log json    ${content}
 	${brandIdlists}   get json value    ${content}   /data
 	${brandIds}   FilterList    ${brandIdlists}    disp_order,10,2000    brand_id
-	${brand_id}    Run Keyword If  ${brandIds}<>0    randomchoice   ${brandIds}  ,   ELSE    set variable   12
+	${brand_id}    Run Keyword If  ${brandIds}!=0    randomchoice   ${brandIds}  ,   ELSE    set variable   12
 	${path1}=    set variable    /brand-shoe-list
 	${page}    set variable    1
 	${pagesize}    set variable    10
@@ -491,7 +491,7 @@ Get_shoe_id
     log json    ${content1}
 	${shoe_idlist}   get json value    ${content1}   /data
 	${shoe_ids}   FilterList    ${shoe_idlist}    avg_score,3,4.9    shoe_id
-	${shoe_id}    Run Keyword If  ${shoe_ids}<>0    randomchoice   ${shoe_ids}  ,   ELSE    set variable   2909
+	${shoe_id}    Run Keyword If  ${shoe_ids}!=0    randomchoice   ${shoe_ids}  ,   ELSE    set variable   2909
     log   Get_shoe_id End ......
 	[Return]    ${shoe_id}	
 	
@@ -544,8 +544,8 @@ Getmyplanid_filters
 getPlanDetails
     [Arguments]    ${planId}     ${filters}   ${Returnfield}    ${userName}   ${pwd}   
     [Documentation]    /getPlanDetails获取用户参加中的训练计划详情中的detailType
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${path}=    set variable    /getPlanDetails
     ${maps}=    create dictionary
 	set to dictionary    ${maps}    planId=${planId}
@@ -577,8 +577,8 @@ getUserRepairTrainPlan
 getUserHisTrainPlans
     [Arguments]    ${filters}   ${Returnfield}     ${userName}  ${pwd}  
     [Documentation]    /getUserHisTrainPlans获取用户的历史训练计划列表,如没有则返回0；filters过滤条件；Returnfield需要返回的字段
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${path}=    set variable    getUserHisTrainPlans
     ${maps}=    create dictionary
     log    ========输出接口URL：${training_URL}${path}
@@ -594,8 +594,8 @@ Getmywallet
     [Arguments]     ${userName}   ${pwd}   ${field}   ${isall}=None   ${Base_URL}=None
     [Documentation]    wallet/getUserBalanceAmount 个人钱包信息,field为需要返回的字段：balanceAmount(钱包余额)，mobile(手机号码)，status（1：正常,0:冻结），uid，withdrawAmount（可提现金额），未开通钱包或未实名时返回0；
     log   Getmywallet Start ......
-    Evaluate    reload(sys)    sys
-    Evaluate    sys.setdefaultencoding( "utf-8" )    sys
+    ######Evaluate       reload(sys)    sys
+    ##Evaluate      sys.setdefaultencoding( "utf-8" )    sys
     ${wallet_URL}  Run Keyword IF  "${Base_URL}"=="None"   
     ...     Set Variable   ${wallet_URL}
     ...     ELSE  Set Variable   ${Base_URL}

@@ -1,10 +1,10 @@
 *** Settings ***
-Library           Collections
-Library           RequestsLibrary
-Library           pymysql
-Library           DatabaseLibrary
-Library           String
-Library           HttpLibrary.HTTP
+#Library    Collections
+#Library    RequestsLibrary
+#Library    pymysql
+#Library    DatabaseLibrary
+#Library    String
+#Library     HttpLibrary.HTTP
 Library           ../Lib/tool_reptile.py
 Library           ../Lib/tools_library.py
 Library           ../Lib/Usertool_01.py

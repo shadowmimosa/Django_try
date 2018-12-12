@@ -1,9 +1,9 @@
 *** Settings ***
-Library           Collections
-Library           RequestsLibrary
+#Library    Collections
+#Library    RequestsLibrary
 Resource          http_request.txt
-Library           HttpLibrary.HTTP
-Library           String
+#Library     HttpLibrary.HTTP
+#Library    String
 Library            ../Lib/tools_library.py
 Library            ../Usertool_01.py
 *** Keywords ***

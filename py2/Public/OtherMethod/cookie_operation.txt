@@ -1,10 +1,10 @@
 *** Settings ***
-Library           Collections
-Library           RequestsLibrary
+#Library    Collections
+#Library    RequestsLibrary
 Library           ../Lib/tools_library.py
 Resource          ../Public/http_request.txt
-Library           HttpLibrary.HTTP
-Library           String
+#Library     HttpLibrary.HTTP
+#Library    String
 
 *** Keywords ***
 fx_get_login_cookie

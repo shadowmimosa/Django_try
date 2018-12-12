@@ -1,10 +1,10 @@
 *** Settings ***
-Library           Collections
-Library           RequestsLibrary
-Library           pymysql
-Library           DatabaseLibrary
-Library           String
-Library           HttpLibrary.HTTP
+#Library    Collections
+#Library    RequestsLibrary
+#Library    pymysql
+#Library    DatabaseLibrary
+#Library    String
+#Library     HttpLibrary.HTTP
 Resource          ../Public/cookie_mps_web.txt
 Resource          ../public_lib.txt
 

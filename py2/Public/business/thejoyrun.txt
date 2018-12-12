@@ -1,10 +1,10 @@
 *** Settings ***
-Library           Collections
-Library           RequestsLibrary
-Library           pymysql
-Library           DatabaseLibrary
-Library           String
-Library           HttpLibrary.HTTP
+#Library    Collections
+#Library    RequestsLibrary
+#Library    pymysql
+#Library    DatabaseLibrary
+#Library    String
+#Library     HttpLibrary.HTTP
 Library           ../Lib/tool_reptile.py
 Library           ../Lib/tools_library.py
 Resource          ../OtherMethod/cookie_operation.txt
@@ -150,12 +150,12 @@ FilterList
     \    ...    ELSE    set variable    ${field2Value}
     \    ${field3Value}    Run Keyword If    '${field3Value}'=='null'    set variable    -1
     \    ...    ELSE    set variable    ${field3Value}
-    \    ${ReturnfieldValue}    Run Keyword If    "${Returnfield}"<>"All" and ${filterfield1min}<=${field1Value}<=${filterfield1max} and ${filterfield2min}<=${field2Value}<=${filterfield2max} and ${filterfield3min}<=${field3Value}<=${filterfield3max}    set variable    ${ReturnfieldValue1}
+    \    ${ReturnfieldValue}    Run Keyword If    "${Returnfield}"!="All" and ${filterfield1min}<=${field1Value}<=${filterfield1max} and ${filterfield2min}<=${field2Value}<=${filterfield2max} and ${filterfield3min}<=${field3Value}<=${filterfield3max}    set variable    ${ReturnfieldValue1}
     \    ...    ELSE IF    "${Returnfield}"=="All" and ${filterfield1min}<=${field1Value}<=${filterfield1max} and ${filterfield2min}<=${field2Value}<=${filterfield2max} and ${filterfield3min}<=${field3Value}<=${filterfield3max}    set variable    ${scr_single}
     \    ...    ELSE    set variable    joyrunzzqtestspit
     \    ${Valuelen}    Evaluate    len(R'${ReturnValue}')
-    \    ${ReturnValue}    Run Keyword If    "${Returnfield}"<>"All" and ${Valuelen}>=1    set variable    ${ReturnValue},${ReturnfieldValue}
-    \    ...    ELSE IF    "${Returnfield}"<>"All" and ${Valuelen}<1    set variable    ${ReturnfieldValue}
+    \    ${ReturnValue}    Run Keyword If    "${Returnfield}"!="All" and ${Valuelen}>=1    set variable    ${ReturnValue},${ReturnfieldValue}
+    \    ...    ELSE IF    "${Returnfield}"!="All" and ${Valuelen}<1    set variable    ${ReturnfieldValue}
     \    ...    ELSE    set variable    ${ReturnValue}zzqtestlistspit${ReturnfieldValue}
     \    ${ReturnValue}    replace string    ${ReturnValue}    ,joyrunzzqtestspit    ${EMPTY}
     \    ${ReturnValue}    replace string    ${ReturnValue}    joyrunzzqtestspit,    ${EMPTY}
@@ -587,7 +587,7 @@ thejoyrun_postjson_wxminp
     ${ContentType}    Set Variable    application/json;charset=UTF-8
     ${wxminpnames}    Split String    ${path}    /
     ${wxminpname1}    Get From List    ${wxminpnames}    1
-    ${wxminpname}    Run Keyword If    '${wxminpname1}'<>'wallet'    set variable    ${wxminpname1}
+    ${wxminpname}    Run Keyword If    '${wxminpname1}'!='wallet'    set variable    ${wxminpname1}
     ...    ELSE    Set variable    corpcrew
     ${appid}    set variable    ${${wxminpname}appid}
     ${sid}    set variable    ${${wxminpname}sid}
@@ -641,7 +641,7 @@ thejoyrun_get_wxminp
     log    thejoyrun_get_wxminp Start ......
     ${wxminpnames}    Split String    ${path}    /
     ${wxminpname1}    Get From List    ${wxminpnames}    1
-    ${wxminpname}    Run Keyword If    '${wxminpname1}'<>'wallet'    set variable    ${wxminpname1}
+    ${wxminpname}    Run Keyword If    '${wxminpname1}'!='wallet'    set variable    ${wxminpname1}
     ...    ELSE    Set variable    corpcrew
     ${appid}    set variable    ${${wxminpname}appid}
     ${sid}    set variable    ${${wxminpname}sid}
