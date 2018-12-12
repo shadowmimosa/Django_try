@@ -1,0 +1,241 @@
+*** Settings ***
+Library           Collections
+Library           RequestsLibrary
+Library           pymysql
+Library           DatabaseLibrary
+Library           String
+# Library           HttpLibrary.HTTP
+Resource          ../Public/cookie_mps_web.txt
+Resource          ../public_lib.txt
+
+*** Variables ***
+${password}       67889911
+${acshow_version}   8080
+${acshow_platform}    5
+${acshow_device}     EADFDADFASDFEWQRRQWERGGHR
+${acshow_channel}   200
+
+
+*** Keywords ***
+mps_web_get
+    [Arguments]    ${path}    ${maps}    ${tokenuserName}    ${acshow_URL}
+    ${appid}=    set variable    1131    #1131是酷狗分配给繁星2.0的客户端ID    ，IOS和Android都是1131
+    Comment    ${password}    Set Variable    67889911
+    Comment    @{logintoken}=    ac_get_token    ${tokenuserName}    ${password}
+    #    ${logintoken}=    ac_get_token    hotto0509    robot123456
+    @{logintoken}=    callback_token_KugooID    http://fx66.fxwork.kugou.com/    ${tokenuserName}     ${password}
+    ${t}=    set variable    ${logintoken[1]}
+    ${KugooID}=    set variable    ${logintoken[0]}
+    ${cookie_KugooID}    set variable    KugooID=${KugooID}
+    ${cookie_t}    set variable    t=${t}
+    ${version}=    set variable    ${acshow_version}
+    ${pid}=    set variable    85
+    ${jsonpcallback}=    set variable    jsonpcallback
+    ${post_dict}=    create dictionary
+    Set To Dictionary    ${post_dict}    jsonpcallback=${jsonpcallback}    pid=${pid}    version=${version}
+    @{mapstolist}=    evaluate    sorted(${maps}.items())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+    #排序及格式处理
+    ${post_dict_tolist}=    evaluate    sorted(${post_dict}.items())
+    ${signparam}=    convert to string    ${post_dict_tolist}
+    ${signparam}=    Replace String    ${signparam}    [    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    u'    '
+    ${signparam}=    Replace String    ${signparam}    ', '    =
+    ${signparam}=    Replace String    ${signparam}    ('    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ')    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ,${SPACE}    &
+    ${signparam}=    Replace String    ${signparam}    ]    ${EMPTY}
+    ${signparam}=    Evaluate    '${signparam}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    log    ${signparam}
+    #排序及格式处理
+    # ${sign}=    encrypt    ${signparam}${appkey}    md5
+    # set to dictionary    ${post_dict}    sign=${sign}
+    # ${post_dict_tolist1}=    evaluate    sorted(${post_dict}.items())
+    # log    参数编码前：${post_dict}
+    # ${post_dict}    Evaluate    urllib.parse.urlencode(${post_dict})    urllib
+    # log    参数编码后：${post_dict}
+    # #增加日志输出，默认注释掉
+    # # ${tempfile}    writeFile    ${post_dict}    c:\post_dict.txt
+    # ${post_param}=    convert to string    ${post_dict_tolist1}
+    # ${post_param}=    Replace String    ${post_param}    [    ${EMPTY}
+    # ${post_param}=    Replace String    ${post_param}    u'    '
+    # ${post_param}=    Replace String    ${post_param}    ', '    =
+    # ${post_param}=    Replace String    ${post_param}    ('    ${EMPTY}
+    # ${post_param}=    Replace String    ${post_param}    ')    ${EMPTY}
+    # ${post_param}=    Replace String    ${post_param}    ,${SPACE}    &
+    # ${post_param}=    Replace String    ${post_param}    ]    ${EMPTY}
+    # ${post_param}=    Evaluate    '${post_param}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    ${resp}=    get_request_general_new    ${acshow_URL}    params=${signparam}    cookies=KuGoo=${cookie_KugooID}\&${cookie_t}    uri=${path}    headers=Content-Type=application/x-www-form-urlencoded
+    # ${resp}=    post_request_general    ${URL}    ${post_param}    uri=${path}
+    [Return]    ${resp}
+
+acshow_guest_post
+    [Arguments]    ${path}    ${maps}    ${acshow_URL}
+    ${appid}=    set variable    1131    #1131是酷狗分配给繁星2.0的客户端ID    ，IOS和Android都是1131
+    Comment    ${password}    Set Variable    67889911
+    # @{logintoken}=    ac_get_token    ${tokenuserName}    ${password}
+    # #    ${logintoken}=    ac_get_token    hotto0509    robot123456
+    # ${token}=    set variable    ${logintoken[0]}
+    # ${pid}=    set variable    ${logintoken[1]}
+    ${token}=    set variable    ${EMPTY}
+    ${pid}=    set variable    0
+    ${version}=    set variable    ${acshow_version}
+    ${platform}=    set variable    ${acshow_platform}
+    ${device}=    set variable    ${acshow_device}
+    ${times}=    set variable    1428382468203L
+    ${channel}=    set variable    ${acshow_channel}    #1009代表appstore
+    ${URL}=    set variable    ${acshow_URL}    #${acURL}    #ac_config.py
+    ${appkey}=    set variable    $_fan_xing_$
+    ${post_dict}=    create dictionary    appid=${appid}    token=${token}    pid=${pid}
+    set to dictionary    ${post_dict}    version=${version}    platform=${platform}    device=${device}
+    set to dictionary    ${post_dict}    times    ${times}    channel    ${channel}
+    #    ${maps}=    create dictionary    opusId    123    playerId    456
+    @{mapstolist}=    evaluate    sorted(${maps}.items())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+    #排序及格式处理
+    ${post_dict_tolist}=    evaluate    sorted(${post_dict}.items())
+    ${signparam}=    convert to string    ${post_dict_tolist}
+    ${signparam}=    Replace String    ${signparam}    [    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    u'    '
+    ${signparam}=    Replace String    ${signparam}    ', '    =
+    ${signparam}=    Replace String    ${signparam}    ('    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ')    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ,${SPACE}    &
+    ${signparam}=    Replace String    ${signparam}    ]    ${EMPTY}
+    ${signparam}=    Evaluate    '${signparam}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    log    ${signparam}
+    #排序及格式处理
+    ${sign}=    encrypt    ${signparam}${appkey}    md5
+    set to dictionary    ${post_dict}    sign    ${sign}
+    ${post_dict_tolist1}=    evaluate    sorted(${post_dict}.items())
+    ${post_param}=    convert to string    ${post_dict_tolist1}
+    ${post_param}=    Replace String    ${post_param}    [    ${EMPTY}
+    ${post_param}=    Replace String    ${post_param}    u'    '
+    ${post_param}=    Replace String    ${post_param}    ', '    =
+    ${post_param}=    Replace String    ${post_param}    ('    ${EMPTY}
+    ${post_param}=    Replace String    ${post_param}    ')    ${EMPTY}
+    ${post_param}=    Replace String    ${post_param}    ,${SPACE}    &
+    ${post_param}=    Replace String    ${post_param}    ]    ${EMPTY}
+    ${post_param}=    Evaluate    '${post_param}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    # ${tempfile}    writeFile    ${post_param}    c:\post_guest_param.txt
+    ${resp}=    post_request_general    ${URL}    params=${post_param}    uri=${path}
+    [Return]    ${resp}
+
+acshow_get
+    [Arguments]    ${path}    ${maps}    ${acshow_URL}    ${app_version}=None
+    # ${version}=    set variable    ${acshow_version}
+    #增加版本号判断
+    ${version}=    Run Keyword If    ${app_version}!=None    set variable    ${app_version}
+    ...    ELSE    set variable    ${acshow_version}
+    ${platform}=    set variable    ${acshow_platform}
+    ${URL}=    set variable    ${acshow_URL}    #ac_config.py
+    ${appkey}=    set variable    $_fan_xing_$
+    ${get_dict}=    create dictionary
+    set to dictionary    ${get_dict}    version=${version}    platform=${platform}
+    @{mapstolist}=    evaluate    sorted(${maps}.items())    #排序
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${get_dict}    ${map[0]}=${map[1]}
+    ${get_dict_full}=    copy dictionary    ${get_dict}
+    ${get_dict_notnull}=    popNull    ${get_dict}    #删掉value为空的属性
+    #排序及格式处理
+    ${get_dict_tolist}=    evaluate    sorted(${get_dict_notnull}.items())
+    ${signparam}=    convert to string    ${get_dict_tolist}
+    ${signparam}=    Replace String    ${signparam}    [    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    u'    '
+    ${signparam}=    Replace String    ${signparam}    ', '    =
+    ${signparam}=    Replace String    ${signparam}    ('    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ')    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ,${SPACE}    &
+    ${signparam}=    Replace String    ${signparam}    ]    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    |    ,
+    ${signparam}=    Evaluate    '${signparam}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    #排序及格式处理
+    ${sign}=    encrypt    ${signparam}${appkey}    md5
+    set to dictionary    ${get_dict_full}    sign=${sign}
+    ${get_dict_tolist1}=    evaluate    sorted(${get_dict_full}.items())
+    ${get_param}=    convert to string    ${get_dict_tolist1}
+    ${get_param}=    Replace String    ${get_param}    [    ${EMPTY}
+    ${get_param}=    Replace String    ${get_param}    u'    '
+    ${get_param}=    Replace String    ${get_param}    ', '    =
+    ${get_param}=    Replace String    ${get_param}    ('    ${EMPTY}
+    ${get_param}=    Replace String    ${get_param}    ')    ${EMPTY}
+    ${get_param}=    Replace String    ${get_param}    ,${SPACE}    &
+    ${get_param}=    Replace String    ${get_param}    ]    ${EMPTY}
+    ${get_param}=    Replace String    ${get_param}    |    ,
+    ${get_param}=    Evaluate    '${get_param}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    # ${tempfile}    writeFile    ${get_param}    c:\get_param.txt
+    ${resp}=    get_request_general    ${URL}    params=${get_param}    uri=${path}
+    [Return]    ${resp}
+
+acshow_post_key
+    [Arguments]    ${path}    ${maps}    ${tokenuserName}    ${acshow_URL}
+    ${appid}=    set variable    1131    #1131是酷狗分配给繁星2.0的客户端ID    ，IOS和Android都是1131
+    Comment    ${password}    Set Variable    67889911
+    @{logintoken}=    ac_get_token    ${tokenuserName}    ${password}
+    #    ${logintoken}=    ac_get_token    hotto0509    robot123456
+    ${token}=    set variable    ${logintoken[0]}
+    ${pid}=    set variable    ${logintoken[1]}
+    ${version}=    set variable    ${acshow_version}
+    ${platform}=    set variable    ${acshow_platform}
+    ${device}=    set variable    ${acshow_device}
+    ${times}=    set variable    1428382468203L
+    ${channel}=    set variable    ${acshow_channel}    #1009代表appstore
+    ${URL}=    set variable    ${acshow_URL}    #${acURL}    #ac_config.py
+    ${appkey}=    set variable    $_fan_xing_$
+    ${post_dict}=    create dictionary
+    #    自定义Key加密规则
+    ${keybase}    set variable    0585d518379588a12260621ef3496562
+    ${year}    get time    year
+    ${month}    get time    month
+    ${day}    get time    day
+    ${t}    Set Variable    ${year}-${month}-${day}
+    @{mapstolist}=    evaluate    sorted(${maps}.items())
+    : FOR    ${map}    IN    @{mapstolist}
+    \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+    #排序及格式处理
+    ${post_dict_tolist}=    evaluate    sorted(${post_dict}.items())
+    ${signparam}=    convert to string    ${post_dict_tolist}
+    ${signparam}=    Replace String    ${signparam}    [    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    u'    '
+    ${signparam}=    Replace String    ${signparam}    ', '    =
+    ${signparam}=    Replace String    ${signparam}    ('    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ')    ${EMPTY}
+    ${signparam}=    Replace String    ${signparam}    ,${SPACE}    &
+    ${signparam}=    Replace String    ${signparam}    ]    ${EMPTY}
+    ${signparam}=    Evaluate    '${signparam}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    log    ${signparam}
+    #排序及格式处理
+    ${sign}=    encrypt    ${signparam}${keybase}${t}    md5    32
+    set to dictionary    ${post_dict}    sign=${sign}
+    ${post_dict_tolist1}=    evaluate    sorted(${post_dict}.items())
+    ${post_param}=    convert to string    ${post_dict_tolist1}
+    ${post_param}=    Replace String    ${post_param}    [    ${EMPTY}
+    ${post_param}=    Replace String    ${post_param}    u'    '
+    ${post_param}=    Replace String    ${post_param}    ', '    =
+    ${post_param}=    Replace String    ${post_param}    ('    ${EMPTY}
+    ${post_param}=    Replace String    ${post_param}    ')    ${EMPTY}
+    ${post_param}=    Replace String    ${post_param}    ,${SPACE}    &
+    ${post_param}=    Replace String    ${post_param}    ]    ${EMPTY}
+    ${post_param}=    Evaluate    '${post_param}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
+    ${resp}=    post_request_general    ${URL}    params=${post_param}    uri=${path}
+    [Return]    ${resp}
+
+format string
+    [Arguments]    ${input}
+    ${list}=    set variable    ${input}
+    ${list}=    replace string    ${list}    {    ${EMPTY}
+    ${list}=    replace string    ${list}    }    ${EMPTY}
+    ${list}=    replace string    ${list}    "    ${EMPTY}
+    @{list}=    Split String    ${list}    ,
+    [Return]    @{list}
+
+countbyitem
+    [Arguments]    ${content}    ${item}    ${attribute}
+    [Documentation]    检查每个分类返回的数据个数
+    ${dict}=    Evaluate    json.dumps(${content})    json
+    ${jkey}=    Evaluate    ${dict}.get('data').get('${item}')    json
+    ${jkey}=    Convert To String    ${jkey}
+    ${count}    Get Count    ${jkey}    ${attribute}
+    [Return]    ${count}
