@@ -2,11 +2,11 @@
 Documentation     公共资源、公共变量、第三方库
 Library           Collections
 Library           RequestsLibrary
-Library           pymysql
+# Library           pymysql
 Library           DatabaseLibrary
 Library           String
 # Library           urllib
-# # # Library           HttpLibrary.HTTP
+# Library           HttpLibrary.HTTP
 Library           ../Public/Lib/tools_library.py
 Library           ../Public/Lib/Usertool_01.py
 Library           ../Public/Lib/tool_reptile.py

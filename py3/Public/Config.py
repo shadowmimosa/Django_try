@@ -42,7 +42,7 @@ deviceToken = 'cb9012fd0302813461884e4a3fcc382886b73f6518c1dbe1f031a3901ee72eb4'
 UserAgent = 'joyRunner/4.1.0 (iPhone; iOS 11.2.1; Scale/3.00)'
 
 #请求头参数-APP的开发版本号
-APPDEVINFO = 'iOS#4.1.0.01101444'
+APPDEVINFO='iOS#4.4.1.AutoTest#iPhone 7X#11.2.Joyrun#DeveiceId#UserID#AppStore#E50BA530-7648-4F2F-BE00-4F9563FBCF6E'
 
 #请求头参数-设备类型
 MODELTYPE = 'iPhone 7 Plus'
