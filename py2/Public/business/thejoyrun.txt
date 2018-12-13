@@ -1,10 +1,4 @@
 *** Settings ***
-#Library    Collections
-#Library    RequestsLibrary
-#Library    pymysql
-#Library    DatabaseLibrary
-#Library    String
-#Library     HttpLibrary.HTTP
 Library           ../Lib/tool_reptile.py
 Library           ../Lib/tools_library.py
 Resource          ../OtherMethod/cookie_operation.txt
@@ -386,6 +380,9 @@ thejoyrun_postd
     log    通用签名:${_sign}
     ${signature} =    Convert To Uppercase    ${sign2}
     log    业务签名：${signature}
+	#处理设备ID
+	${APPDEVINFO}   Replace String    ${APPDEVINFO}    DeveiceId    AutoTest_Joyrun_${username}
+	${APPDEVINFO}	Replace String    ${APPDEVINFO}    UserID    ${uid}
     set to dictionary    ${heards_dict}    _sign=${_sign}
     set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
     set to dictionary    ${heards_dict}    Content-Type=${ContentType}
@@ -486,6 +483,9 @@ thejoyrun_postnl
     log    通用签名:${_sign}
     ${signature} =    Convert To Uppercase    ${sign2}
     log    业务签名：${signature}
+	#处理设备ID
+	${APPDEVINFO}   Replace String    ${APPDEVINFO}    DeveiceId    AutoTest_Joyrun_${username}
+	${APPDEVINFO}	Replace String    ${APPDEVINFO}    UserID    -1
     set to dictionary    ${heards_dict}    _sign=${_sign}
     set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
     set to dictionary    ${heards_dict}    Content-Type=${ContentType}
@@ -549,6 +549,9 @@ thejoyrun_post_nosign
     @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
     : FOR    ${map}    IN    @{mapstolist}
     \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+	#处理设备ID
+	${APPDEVINFO}   Replace String    ${APPDEVINFO}    DeveiceId    AutoTest_Joyrun_${username}
+	${APPDEVINFO}	Replace String    ${APPDEVINFO}    UserID    ${uid}
     set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
     set to dictionary    ${heards_dict}    Content-Type=${ContentType}
     set to dictionary    ${heards_dict}    User-Agent=${UserAgent}
@@ -758,6 +761,9 @@ thejoyrun_getp
     log    通用签名:${_sign}
     ${signature} =    Convert To Uppercase    ${sign2}
     log    业务签名：${signature}
+	#处理设备ID
+	${APPDEVINFO}   Replace String    ${APPDEVINFO}    DeveiceId    AutoTest_Joyrun_${username}
+	${APPDEVINFO}	Replace String    ${APPDEVINFO}    UserID    ${uid}
     set to dictionary    ${heards_dict}    _sign=${_sign}
     set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
     set to dictionary    ${heards_dict}    Content-Type=${ContentType}
@@ -820,6 +826,9 @@ thejoyrun_get_nosign
     @{mapstolist}=    evaluate    sorted(${maps}.iteritems())
     : FOR    ${map}    IN    @{mapstolist}
     \    set to dictionary    ${post_dict}    ${map[0]}=${map[1]}
+	#处理设备ID
+	${APPDEVINFO}   Replace String    ${APPDEVINFO}    DeveiceId    AutoTest_Joyrun_${username}
+	${APPDEVINFO}	Replace String    ${APPDEVINFO}    UserID    ${uid}
     #排序及格式处理
     set to dictionary    ${heards_dict}    APPVERSION=${APPVERSION}
     set to dictionary    ${heards_dict}    Content-Type=${ContentType}

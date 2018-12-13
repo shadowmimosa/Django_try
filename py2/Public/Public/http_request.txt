@@ -1,10 +1,4 @@
 *** Settings ***
-#Library    Collections
-#Library    RequestsLibrary
-#Library    pymysql
-#Library    DatabaseLibrary
-#Library    String
-#Library     HttpLibrary.HTTP
 Library           ../Lib/tool_reptile.py
 Library           ../Lib/tools_library.py
 Library           ../Lib/Usertool_01.py
@@ -80,6 +74,10 @@ joyrun_POST_heardsession
     log   通用签名：${_sign}
     ${signature} =    Convert To Uppercase    ${sign2}
     log    业务签名：${signature}
+	#处理设备ID
+	${APPDEVINFO}   Replace String    ${APPDEVINFO}    DeveiceId    AutoTest_Joyrun_${username}
+	${APPDEVINFO}	Replace String    ${APPDEVINFO}    UserID    -1
+	log   APPDEVINFO=${APPDEVINFO}
     ${header}    create dictionary    APPVERSION=${APPVERSION}
     set to dictionary    ${header}    User-Agent=${UserAgent}
     set to dictionary    ${header}    APP_DEV_INFO=${APPDEVINFO}
@@ -92,16 +90,25 @@ joyrun_POST_heardsession
     log    登录前的body=data=pwd=${pwdmd5}&timestamp=${timestamp}&username=${username}
     ${data}  Set Variable  deviceToken=${deviceToken}&pwd=${pwdmd5}&signature=${signature}&timestamp=${timestamp}&username=${username}
     Create Session    joyrun    ${Url}    headers=${header}
-    ${resplogin}=    Post Request    joyrun    /user/login/normal   data=${data}     
-    ##...     ${EMPTY}   ${EMPTY}   None   ${True}   ${EMPTY}   
+    ${resplogin}=    Post Request    joyrun    ${loginUri}   data=${data}      
     log    ${resplogin.headers}
     #log    ${resplogin.json}
     ${login_content}=    charconver    ${resplogin.content}
     ${login_ret}     Get Json Value   ${login_content}   /ret
     ${login_ret}     Replace String    ${login_ret}    "    ${EMPTY}
     ${login_error}   Run Keyword If   ${login_ret}!=0   Get Json Value   ${login_content}   /msg
-    Run Keyword If   ${login_ret}==0   log json  ${login_content}       
+    ${heards_dict}  Run Keyword If   ${login_ret}==0   Joyrun_LoginResult	 ${advert_URL}  ${username}  ${pwd}  ${header}  ${login_content}    ${timestamp}
+	Run Keyword If   ${login_ret}==0   log  ${heards_dict}
+	...	   ELSE IF   ${login_ret}==41998   log  新设备需要用手机验证码登录 
     ...    ELSE   log    哈哈，在登录就出错了！！！！！失败原因:${login_error}
+	log    -------------------------------heards_dict mothod is log End1 ---------
+    log    -------------------------------heards_dict mothod is log End2 ---------
+	[Return]    ${heards_dict}
+	
+Joyrun_LoginResult	
+	[Arguments]    ${advert_URL}  ${username}  ${pwd}  ${header}  ${login_content}    ${timestamp}
+    [Documentation]    Joyrun loginResult 
+	log    -----------------Joyrun_LoginResult mothod is log start;--------------------------
     ${userdata}   Get Json Value    ${login_content}    /data/user
     ${sid}    Get Json Value    ${login_content}    /data/sid
     ${uid}    Get Json Value    ${login_content}    /data/user/uid
@@ -110,27 +117,52 @@ joyrun_POST_heardsession
     ${ypcookie}=    Replace String    ${ypcookie}    "    ${EMPTY}
 	${sid}=    Replace String    ${sid}    "    ${EMPTY}
     ${uid}=    Replace String    ${uid}    "    ${EMPTY}	
-    ${nick}=    Replace String    ${nick}    "    ${EMPTY}   
+    ${nick}=    Replace String    ${nick}    "    ${EMPTY}  
     log    登录后用户基础信息为：nick==${nick}、uid==${uid}、sid==${sid}
     log    登录后的ypcookie==${ypcookie}
     log    登录后用户userinfo信息为：
     log json   ${userdata}
-    ${heards_dict}=    create dictionary
-    set to dictionary    ${heards_dict}    uid=${uid}
-    set to dictionary    ${heards_dict}    sid=${sid}
-    set to dictionary    ${heards_dict}    ypcookie=${ypcookie}
-    set to dictionary    ${heards_dict}    timestamp=${timestamp}
-    set to dictionary    ${heards_dict}    userinfo=${userdata}   
-    Log Dictionary       ${heards_dict}
+    ${heardic}=    create dictionary
+    set to dictionary    ${heardic}    uid=${uid}
+    set to dictionary    ${heardic}    sid=${sid}
+    set to dictionary    ${heardic}    ypcookie=${ypcookie}
+    set to dictionary    ${heardic}    timestamp=${timestamp}
+    set to dictionary    ${heardic}    userinfo=${userdata}   
+    Log Dictionary       ${heardic}
     log  将登录成功的用户信息设置为全局变量
     ${env}    Run keyword If    "${login_URL}"=="http://api-test.thejoyrun.com"    set variable    Test
     ...    ELSE    set variable    Online
-    set to dictionary      ${usersinfo_dict}    ${env}${userName}=${heards_dict}
+    set to dictionary      ${usersinfo_dict}    ${env}${userName}=${heardic}
     set global variable    &{usersinfo_dict}    &{usersinfo_dict}
     log dictionary   ${usersinfo_dict} 
-    log    -------------------------------heards_dict mothod is log End1 ---------
-    log    -------------------------------heards_dict mothod is log End2 ---------
-    [Return]    ${heards_dict}
+	#增加设备至用户设备表中
+	Joyrun_Add_deviceid  ${uid}  ${advert_URL}  ${header}  ${username}  
+	log    -----------------Joyrun_LoginResult mothod is log End;--------------------------
+    [Return]    ${heardic}
+
+Joyrun_Add_deviceid
+	[Arguments]   ${uid}    ${advert_URL}   ${header}    ${username}    
+    [Documentation]    Joyrun Add deveiceid 
+	log    -----------------Joyrun_Add_deviceid mothod is log start;--------------------------
+	${Add_deveiceid_path}  set variable   /notify-list
+	${data}  set variable    ${EMPTY}
+	log    ${data}
+	#处理设备ID
+	${APPDEVINFO}   Replace String    ${APPDEVINFO}    DeveiceId    AutoTest_Joyrun_${username}
+	${APPDEVINFO}	Replace String    ${APPDEVINFO}    UserID    ${uid}
+	set to dictionary    ${header}    APP_DEV_INFO=${APPDEVINFO}
+	Create Session    joyrun    ${advert_URL}    headers=${header}
+    ${respaddeveiceid}=    Post Request    joyrun   ${Add_deveiceid_path}    data=${data}  
+	${Add_deviceid_content}=    charconver    ${respaddeveiceid.content}
+	log json   ${Add_deviceid_content}
+    ${Add_deviceid_ret}     Get Json Value   ${Add_deviceid_content}   /ret
+    ${Add_deviceid_ret}     Replace String    ${Add_deviceid_ret}    "    ${EMPTY}
+	${Add_deviceid_error}   Run Keyword If   ${Add_deviceid_ret}!=0   Get Json Value   ${Add_deviceid_content}   /msg
+	Run Keyword If   ${Add_deviceid_ret}==0   log  哈哈，在设备ID增加成功！
+	...    ELSE   log    哈哈，在设备ID增加失败！！！！失败原因:${Add_deviceid_error}
+	log    -----------------Joyrun_Add_deviceid mothod is log End;--------------------------
+
+	
 
 
 

@@ -2,7 +2,7 @@
 Documentation     公共资源、公共变量、第三方库
 Library    Collections
 Library    RequestsLibrary
-Library    pymysql
+#Library    pymysql
 Library    DatabaseLibrary
 Library    String
 Library     HttpLibrary.HTTP
