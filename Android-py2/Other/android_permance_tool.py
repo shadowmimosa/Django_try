@@ -10,8 +10,7 @@ android_permance_tool.py [-vv]
 功能2：支持两个版本性能数据分析比较，汇总，自动生成新的汇总结果报告，且支持性能测试定制化报告生成
 功能3：打印输出当前连接手机设备的应用包名、Activity名
 
-Author：mikezhou
-Date:  2017年4月12号
+Author：zouzhiquan
 
 Arguments1:
   device_name     第1个sys.arg[1]参数为：设备序列号

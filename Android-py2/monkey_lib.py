@@ -1,6 +1,7 @@
 #coding=utf-8
 '''
 基于monkey开发的Android随机测试工具
+Author：zouzhiquan
 '''
 import re
 import sys
