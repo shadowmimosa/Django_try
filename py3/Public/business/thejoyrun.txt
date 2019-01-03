@@ -338,7 +338,9 @@ Env_URL
 thejoyrun_postd
     [Arguments]    ${path}    ${maps}    ${userName}    ${Base_URL}    ${pwds}=None    ${Retry}=None
     [Documentation]    *用于APP内部需要登录和签名Post场景：post请求data方式关键字*
-    ...
+    ...    ${userName}  中传uid/sid 模式时用的是sid访问，${pwds}不启作用
+	...    ${pwds}  中传None时，密码为使用默认密码67889911
+	...    ${Retry}  中传None时，默认重试3次，否则为传的次数；
     ...    参数以data方法提交，不出现Url中，而只在body中带公共参数（sign、timestamp）；
     [Timeout]    30 seconds
     log    thejoyrun_postd Start ......
@@ -350,7 +352,14 @@ thejoyrun_postd
     ${env}    Env_URL    ${Base_URL}
     ${userslist}    Get Dictionary Keys    ${usersinfo_dict}
     ${user_is}    Get Count    ${userslist}    ${env}${userName}
-    ${heards}    Run Keyword If    ${user_is}<=0    joyrun_POST_heardsession    ${userName}    ${pwd}    ${Base_URL}
+	${sid_and_uid}   Get Lines Matching Pattern    ${userName}    */*
+	${sid_uidlist}    Run Keyword If  '${sid_and_uid}'!='${EMPTY}'   split string   ${userName}   /
+	${sid_input}   Run Keyword If  '${sid_and_uid}'!='${EMPTY}'   Get From List  ${sid_uidlist}   -1
+	${uid_input}   Run Keyword If  '${sid_and_uid}'!='${EMPTY}'   Get From List  ${sid_uidlist}   0
+	${ypcookie_input}   Run Keyword If  '${sid_and_uid}'!='${EMPTY}'  set variable  uid=${uid_input}\&sid=${sid_input}
+	${uid_sid_input}   Run Keyword If  '${sid_and_uid}'!='${EMPTY}'  create dictionary   uid=${uid_input}   sid=${sid_input}   ypcookie=${ypcookie_input}
+    ${heards}    Run Keyword If    ${user_is}<=0 and '${sid_and_uid}'=='${EMPTY}'  joyrun_POST_heardsession    ${userName}    ${pwd}    ${Base_URL}
+	...    ELSE IF   ${user_is}<=0 and '${sid_and_uid}'!='${EMPTY}'   set variable      ${uid_sid_input}
     ...    ELSE    Get From Dictionary    ${usersinfo_dict}    ${env}${userName}
     #从字典里取出相应key的值
     ${uid}=    Get From Dictionary    ${heards}    uid
@@ -717,7 +726,9 @@ thejoyrun_get_wxminp
 thejoyrun_getp
     [Arguments]    ${path}    ${maps}    ${userName}    ${Base_URL}    ${pwds}=None    ${Retry}=None
     [Documentation]    *用于APP内需要登录和签名的Get场景：joyrun中get请求url方式关键字*
-    ...
+    ...    ${userName}  中传uid/sid 模式时用的是sid访问，${pwds}不启作用
+	...    ${pwds}  中传None时，密码为使用默认密码67889911
+	...    ${Retry}  中传None时，默认重试3次，否则为传的次数；
     ...    参数以params方法提交出现Url中，也在body带公共参数（signature、timestamp）；
     [Timeout]    30 seconds
     log    thejoyrun_getp Start ......
@@ -728,7 +739,15 @@ thejoyrun_getp
     ${env}    Env_URL    ${Base_URL}
     ${userslist}    Get Dictionary Keys    ${usersinfo_dict}
     ${user_is}    Get Count    ${userslist}    ${env}${userName}
-    ${heards}    Run Keyword If    ${user_is}<=0    joyrun_POST_heardsession    ${userName}    ${pwd}    ${Base_URL}
+	###处理直接输入sid的情况
+	${sid_and_uid}   Get Lines Matching Pattern    ${userName}    */*
+	${sid_uidlist}    Run Keyword If  '${sid_and_uid}'!='${EMPTY}'   split string   ${userName}   /
+	${sid_input}   Run Keyword If  '${sid_and_uid}'!='${EMPTY}'   Get From List  ${sid_uidlist}   -1
+	${uid_input}   Run Keyword If  '${sid_and_uid}'!='${EMPTY}'   Get From List  ${sid_uidlist}   0
+	${ypcookie_input}   Run Keyword If  '${sid_and_uid}'!='${EMPTY}'  set variable  uid=${uid_input}\&sid=${sid_input}
+	${uid_sid_input}   Run Keyword If  '${sid_and_uid}'!='${EMPTY}'  create dictionary   uid=${uid_input}   sid=${sid_input}   ypcookie=${ypcookie_input}
+    ${heards}    Run Keyword If    ${user_is}<=0 and '${sid_and_uid}'=='${EMPTY}'  joyrun_POST_heardsession    ${userName}    ${pwd}    ${Base_URL}
+	...    ELSE IF   ${user_is}<=0 and '${sid_and_uid}'!='${EMPTY}'   set variable      ${uid_sid_input}
     ...    ELSE    Get From Dictionary    ${usersinfo_dict}    ${env}${userName}
     #从字典里取出相应key的值
     ${uid}=    Get From Dictionary    ${heards}    uid
@@ -766,12 +785,9 @@ thejoyrun_getp
     # ${signparam}=    Replace String    ${signparam}    ')    ${EMPTY}
     # ${signparam}=    Replace String    ${signparam}    ,${SPACE}    ${EMPTY}
     # ${signparam}=    Replace String    ${signparam}    ]    ${EMPTY}
-
     #${signparam}=    Replace String    ${signparam}    &    ${EMPTY}
     # ${signparam}=    Evaluate    '${signparam}'.decode('unicode_escape')    #对中文做处理，将unicode字符解码成对应的中文字符
     #log    ${signparam}
-
-
     ${len}=    evaluate    len(${sign_dict_tolist})
     ${signparam} =    set variable    ${EMPTY}
     : FOR    ${index}    IN RANGE    0    ${len}
@@ -896,9 +912,8 @@ thejoyrun_get_nosign
 
 thejoyrun_postjson
     [Arguments]    ${path}    ${maps}    ${Base_URL}    ${uid}=None
-    [Documentation]    *用于微信小程序Post场景：joyrun中post请求json方式关键字*
-    ...
-    ...    参数以data提交，在出现Url中，也在body中带公共参数（appid、timestamp、sid主要用于小程序）；
+    [Documentation]    *dubbo api 场景：joyrun dubbo api中post请求json方式关键字*
+    ...    参数以json格式提交数据；
     [Timeout]    30 seconds
     log    thejoyrun_postjson Start ......
     ${ContentType}    Set Variable    application/json;charset=UTF-8
