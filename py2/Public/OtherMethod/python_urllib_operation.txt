@@ -1,6 +1,0 @@
-*** Keywords ***
-quote
-    [Arguments]    ${str}    ${safe}=None
-    ${quote_str}=    run keyword if    '${safe}' == '${None}'    evaluate    urllib.quote('${str}')    urllib
-    ${quote_str}=    run keyword unless    '${safe}' == '${None}'    evaluate    urllib.quote('${str}',safe='${safe}')    urllib
-    [Return]    ${quote_str}

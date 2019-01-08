@@ -1,1 +1,0 @@
-thrift -r -gen py -out ./ test.thrift
