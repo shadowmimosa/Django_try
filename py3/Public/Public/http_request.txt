@@ -1,19 +1,21 @@
 *** Settings ***
-Library           Collections
-Library           RequestsLibrary
-Library           pymysql
-Library           DatabaseLibrary
-Library           String
-# Library           HttpLibrary.HTTP
+
 Library           ../Lib/tool_reptile.py
 Library           ../Lib/tools_library.py
 Library           ../Lib/Usertool_01.py
+Resource          ../business/jrtool.txt
+
 *** Variable ***
 ${signOnline}          A4729E62-3701-48C3-A15D-7391838FA186    #可以放置一些公共参数；
 ${signTest}            a9ff6970eb814e6894389ca8b12f3030    #可以放置一些公共参数；
+${signBeta}            A9FF6970EB814E6894389CA8B12F3030    #可以放置一些公共参数；
 ${pwd}                 67889911    #可以放置一些公共参数；
 ${loginTest}           http://api-test.thejoyrun.com
 ${loginOnline}         http://api.thejoyrun.com
+${loginBeta}           http://api-betaenv.thejoyrun.com
+${advert_URLTest}           http://advert-test.api.thejoyrun.com
+${advert_URLOnline}         http://advert.api.thejoyrun.com
+${advert_URLBeta}           http://advert-betaenv.api.thejoyrun.com
 ${Gen_dict}            &{EMPTY}
 ${fxUrl}               http://fanxing.kugoucom
 *** Keywords ***
@@ -52,9 +54,15 @@ joyrun_POST_heardsession
 	[Timeout]    30 seconds
     log    -----------------cookies mothod is log start1;--------------------------
     log    -----------------cookies mothod is log start2;--------------------------
-    ${env}    Env_URL    ${Base_URL}
-    ${login_URL}    Run Keyword If   '${env}'=='Test'   set variable   ${loginTest}   ELSE   set variable   ${loginOnline}  
-    log  运行环境是${login_URL}
+	${env2}    Env_URL   ${Base_URL}
+    ${login_URL}    Run Keyword If   '${env2}'=='Test'  set variable   ${loginTest}   
+	...		ELSE IF  '${env2}'=='Online'   set variable    ${loginOnline}  
+	...		ELSE    set variable     ${loginBeta}
+	${advert_URL}    Run Keyword If   '${env2}'=='Test'  set variable   ${advert_URLTest}   
+	...		ELSE IF  '${env2}'=='Online'   set variable    ${advert_URLOnline}  
+	...		ELSE    set variable     ${advert_URLBeta}
+    log  运行环境是${env2}:${login_URL}
+	log  设备环境是${env2}:${advert_URL}
     ${timestamp}    GetServertime    ${login_URL}
     ${Url}=    set variable    ${login_URL}
     ${loginUri}=    set variable    /user/login/normal
@@ -75,7 +83,9 @@ joyrun_POST_heardsession
     ${sign1}=    encrypt    ${signkey1}    md5    32
     ${sign2}=    encrypt    ${signkey2}    md5    32
     #通用签名
-    ${sign1}    Run Keyword If   '${env}'!='Online'   set variable   ${signTest}   ELSE   set variable   ${signOnline}
+    ${sign1}    Run Keyword If   '${env2}'=='Test'   set variable   ${signTest}   
+	...		ELSE IF    '${env2}'=='Online'   set variable   ${signOnline}
+	...		ELSE    set variable   ${signBeta}
     ${_sign} =    Convert To Uppercase    ${sign1}
     log   通用签名：${_sign}
     ${signature} =    Convert To Uppercase    ${sign2}
@@ -137,9 +147,8 @@ Joyrun_LoginResult
     set to dictionary    ${heardic}    userinfo=${userdata}   
     Log Dictionary       ${heardic}
     log  将登录成功的用户信息设置为全局变量
-    ${env}    Run keyword If    "${login_URL}"=="http://api-test.thejoyrun.com"    set variable    Test
-    ...    ELSE    set variable    Online
-    set to dictionary      ${usersinfo_dict}    ${env}${userName}=${heardic}
+    ${env4}    Env_URL   ${advert_URL}
+    set to dictionary      ${usersinfo_dict}    ${env4}${userName}=${heardic}
     set global variable    &{usersinfo_dict}    &{usersinfo_dict}
     log dictionary   ${usersinfo_dict} 
 	#增加设备至用户设备表中

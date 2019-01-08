@@ -9,6 +9,7 @@ Library           ../Lib/tools_library.py
 Resource          ../OtherMethod/cookie_operation.txt
 Resource          ../Public/http_request.txt
 Resource          thejoyrun.txt
+Resource          jrtool.txt
 
 *** Variables ***
 ${password}       67889911    #可以放置一些公共参数；
@@ -301,7 +302,7 @@ UserRunList_Fid
 	${year}  Get Time   year
     ${maps}=    create dictionary
     set to dictionary    ${maps}    dateline=${dateline}
-    set to dictionary    ${maps}    year=${year}
+    set to dictionary    ${maps}    year=${2018}
     set to dictionary    ${maps}    lasttime=${lasttime}
     log    ---输出参数---
     log    ${api_URL}${maps}

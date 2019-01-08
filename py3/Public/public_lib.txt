@@ -192,9 +192,11 @@ Env_username
     [Arguments]    ${env}=None
     [Documentation]    根据login_URL值判定环境，再根据不同环境随机从用户列表中选择用户；用户列表在config.py中配置环境分为Test和Online，仅当${env}==1时返回环境Online、Test，其他无作用；
     log    Env_username Start ......
-    ${env1}    Run keyword If    "${login_URL}"=="http://api-test.thejoyrun.com"    set variable    Test
-    ...    ELSE    set variable    Online
+    ${env1}    Run keyword If    "${login_URL}"=="http://api.thejoyrun.com"    set variable    Online
+    ...    ELSE IF  "${login_URL}"=="http://api-test.thejoyrun.com"   set variable    Test
+	...    ELSE  Set Variable    Beta
     ${usernamerand}    Run Keyword If    '${env1}'=='Test'    randomchoice    ${Testuserlist}    ,
+    ...    ELSE IF   '${env1}'=='Beta'   randomchoice    ${Betauserlist}    ,
     ...    ELSE    randomchoice    ${Onlineuserlist}    ,
     log    ====环境为${env1}======
     ${runEU}    Run Keyword If    '${env}'=='1'    set variable    ${env1}
@@ -207,12 +209,14 @@ usr_pass_env
     [Arguments]    ${ords}=None
     [Documentation]    根据login_URL值判定环境，再根据不同环境从用户列表中选择用户；用户列表在config.py中配置环境分为Test和Online，仅当${ords}==0时随机返回用户及对应的密码，其他数字表示用户列表的序号，返回为数组【user,pass,env】,默认密码为67889911，要指定密码需要config.py的Onlineuserpwd，Testuserpwd配置；注意：密码中有，或；不能用些方法；
     log    usr_pass_env Start ......
-    ${env}    Run keyword If    "${login_URL}"=="http://api-test.thejoyrun.com"    set variable    Test
-    ...    ELSE    set variable    Online
-    log    ====环境为：${env}=====
+    ${env2}    Run keyword If    "${login_URL}"=="http://api.thejoyrun.com"    set variable    Online
+    ...    ELSE IF  "${login_URL}"=="http://api-test.thejoyrun.com"   set variable    Test
+	...    ELSE  Set Variable    Beta
+    log    ====环境为：${env2}=====
     ${ords}    Run Keyword If    ${ords} is None    set variable    0
     ...    ELSE    set variable    ${ords}
-    ${userpwd}    Run Keyword If    '${env}'=='Test'    choiceOrd    ${Testusrp}    ${ords}   ,
+    ${userpwd}    Run Keyword If    '${env2}'=='Test'    choiceOrd    ${Testusrp}    ${ords}   ,
+	...    ELSE IF  '${env2}'=='Beta'    choiceOrd    ${Betausrp}    ${ords}    ,
     ...    ELSE    choiceOrd    ${Onlineusrp}    ${ords}    ,
     @{list}    Split String    ${userpwd}    /
     ${listLen}    evaluate    len(${list})
@@ -223,7 +227,7 @@ usr_pass_env
     log    ====用户为：${runUser}=====
     log    ====密码为：${runPwd}=====
     log    usr_pass_env End ......
-    [Return]    ${runUser}    ${runPwd}    ${env}
+    [Return]    ${runUser}    ${runPwd}    ${env2}
 
 Textcontrl
     [Arguments]    ${type}=None
