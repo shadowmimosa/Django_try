@@ -1,0 +1,33 @@
+{% extends './base_login.html' %}
+
+{% block title %}注册{% endblock title %}
+
+{% block height %}580{% endblock height %}
+
+{% block login_title %}用户注册{% endblock login_title %}
+
+{% block login_action %} {% url 'background:function' 'register' %} {% endblock login_action %}
+
+{% block login_input %}请输入用户名{% endblock login_input %}
+
+{% block email %}
+            <div class="form-group mg-t20">
+                <i class="icon-address icon_font"></i>
+                <input type="email" class="login_input" name="email" id="email" placeholder="请输入工作邮箱">
+            </div>
+{% endblock email %}
+
+{% block confirm_password %}
+            <div class="form-group mg-t20">
+                <i class="icon-lock icon_font"></i>
+                <input type="password" class="login_input" name="repassword" id="repassword" placeholder="确认密码">
+            </div>
+{% endblock confirm_password %}
+
+{% block login_sign %}{% endblock login_sign %}
+
+{% block login_jump %}
+     240px" href="{% url 'background:function' 'login' %}">已有账号？点击登录
+{% endblock login_jump %}
+
+{% block login_btn %}注 册{% endblock login_btn %}
