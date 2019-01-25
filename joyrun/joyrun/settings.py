@@ -22,10 +22,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = ')=%(%qpipuv(q*i%@is$9p_^@9riym63qxb-8bye_*+ntl%z&c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # ALLOWED_HOSTS = ['*']
-ALLOWED_HOSTS = ['jks.qa.thejoyrun.com', '10.99.1.221', '192.168.43.19', '127.0.0.1','119.147.160.84','localhost','0.0.0.0:16727']
+ALLOWED_HOSTS = ['10.99.1.221', '192.168.43.19', '127.0.0.1']
 
 # Application definition
 
@@ -73,7 +73,7 @@ WSGI_APPLICATION = 'joyrun.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-if not DEBUG:
+if DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -88,25 +88,16 @@ if not DEBUG:
         os.path.join(BASE_DIR, '/joyrun/static'),  # 静态文件额外目录
     )
 else:
-    """mysql连不上
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'yp_testos',  # 新建数据库名
-            'USER': 'root',  # 数据库登录名
-            'PASSWORD':'JoyrunTest@123',  # 'Test@123',  # 数据库登录密码
-            'HOST': 'localhost',  # 数据库所在服务器ip地址
+            'USER': 'admin',  # 数据库登录名
+            'PASSWORD': 'Test@123',  # 数据库登录密码
+            'HOST': '127.0.0.1',  # 数据库所在服务器ip地址
             'PORT': '3306',  # 监听端口 默认3306即可
         }
     }
-    """
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        }
-    }
-    # """
     STATICFILES_DIRS = (
         os.path.join(BASE_DIR, '/joyrun/static'),  # 静态文件额外目录
     )

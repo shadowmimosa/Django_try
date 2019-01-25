@@ -336,7 +336,7 @@ def report_check(request, pagenum):
                 break
         f.close()
 
-    return HttpResponse(readFile(file_name.replace("\\","/")))
+    return HttpResponse(readFile(file_name))
 
 
 def image(request):
