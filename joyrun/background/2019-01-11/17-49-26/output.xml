@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 3.0.4 (Python 3.6.6 on linux)" generated="20190111 17:49:26.548">
+<suite id="s1" name="getUserRepairTrainPlan Post" source="/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/trainingapi/getUserRepairTrainPlan_Post.txt">
+<test id="s1-t1" name="Class_01">
+<kw name="opinion_join_plan">
+<doc>判断用户是否有登记补完成训练计划</doc>
+<arguments>
+<arg>0</arg>
+<arg>成功</arg>
+</arguments>
+<kw name="callkeywords" library="jrtool">
+<doc>按顺序执行多个关键字,并返回每个关键的执行结果，str输入方法为关键字之前用分号（;）隔开，关键字与传参之间用冒号（：）隔开，比如：Getmyclassid:u4444@qq.com;Getmywallet:u4444@qq.com:balanceAmount 这个是执行两个关键字(Getmyclassid,Getmywallet)，每个关键字的冒号后为传参；</doc>
+<arguments>
+<arg>getUserRepairTrainPlan:${userName}:${pwd}</arg>
+</arguments>
+<assign>
+<var>@{str}</var>
+</assign>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>callkeywords Start ......</arg>
+</arguments>
+<msg timestamp="20190111 17:49:26.829" level="INFO">callkeywords Start ......</msg>
+<status status="PASS" starttime="20190111 17:49:26.828" endtime="20190111 17:49:26.829"></status>
+</kw>
+<kw name="Create List" library="BuiltIn">
+<doc>Returns a list containing given items.</doc>
+<assign>
+<var>@{result}</var>
+</assign>
+<msg timestamp="20190111 17:49:26.830" level="INFO">@{result} = [ ]</msg>
+<status status="PASS" starttime="20190111 17:49:26.829" endtime="20190111 17:49:26.830"></status>
+</kw>
+<kw name="Split String" library="String">
+<doc>Splits the ``string`` using ``separator`` as a delimiter string.</doc>
+<arguments>
+<arg>${str}</arg>
+<arg>;</arg>
+</arguments>
+<assign>
+<var>@{keywordslist}</var>
+</assign>
+<msg timestamp="20190111 17:49:26.830" level="INFO">@{keywordslist} = [ getUserRepairTrainPlan:u4444@qq.com:000000 ]</msg>
+<status status="PASS" starttime="20190111 17:49:26.830" endtime="20190111 17:49:26.831"></status>
+</kw>
+<kw name="${keywordvalue} IN [ @{keywordslist} ]" type="for">
+<kw name="${keywordvalue} = getUserRepairTrainPlan:u4444@qq.com:000000" type="foritem">
+<kw name="Split String" library="String">
+<doc>Splits the ``string`` using ``separator`` as a delimiter string.</doc>
+<arguments>
+<arg>${keywordvalue}</arg>
+<arg>:</arg>
+</arguments>
+<assign>
+<var>@{keywordlists}</var>
+</assign>
+<msg timestamp="20190111 17:49:26.832" level="INFO">@{keywordlists} = [ getUserRepairTrainPlan | u4444@qq.com | 000000 ]</msg>
+<status status="PASS" starttime="20190111 17:49:26.831" endtime="20190111 17:49:26.832"></status>
+</kw>
+<kw name="Get From List" library="Collections">
+<doc>Returns the value specified with an ``index`` from ``list``.</doc>
+<arguments>
+<arg>${keywordlists}</arg>
+<arg>0</arg>
+</arguments>
+<assign>
+<var>${keyword}</var>
+</assign>
+<msg timestamp="20190111 17:49:26.833" level="INFO">${keyword} = getUserRepairTrainPlan</msg>
+<status status="PASS" starttime="20190111 17:49:26.832" endtime="20190111 17:49:26.833"></status>
+</kw>
+<kw name="Replace String" library="String">
+<doc>Replaces ``search_for`` in the given ``string`` with ``replace_with``.</doc>
+<arguments>
+<arg>${keywordvalue}</arg>
+<arg>${keyword}:</arg>
+<arg>${EMPTY}</arg>
+</arguments>
+<assign>
+<var>${keywordinput}</var>
+</assign>
+<msg timestamp="20190111 17:49:26.834" level="INFO">${keywordinput} = u4444@qq.com:000000</msg>
+<status status="PASS" starttime="20190111 17:49:26.833" endtime="20190111 17:49:26.834"></status>
+</kw>
+<kw name="Split String" library="String">
+<doc>Splits the ``string`` using ``separator`` as a delimiter string.</doc>
+<arguments>
+<arg>${keywordinput}</arg>
+<arg>:</arg>
+</arguments>
+<assign>
+<var>@{input}</var>
+</assign>
+<msg timestamp="20190111 17:49:26.834" level="INFO">@{input} = [ u4444@qq.com | 000000 ]</msg>
+<status status="PASS" starttime="20190111 17:49:26.834" endtime="20190111 17:49:26.834"></status>
+</kw>
+<kw name="Run Keyword" library="BuiltIn">
+<doc>Executes the given keyword with the given arguments.</doc>
+<arguments>
+<arg>${keyword}</arg>
+<arg>@{input}</arg>
+</arguments>
+<assign>
+<var>${keywordresult}</var>
+</assign>
+<kw name="getUserRepairTrainPlan" library="joyrunbusiness">
+<doc>/getUserRepairTrainPlan 获取用户登记补完成训练的训练计划，没有返回0；有登记的训练计划且isall不为空时返回data,否则返回userplandetailId；</doc>
+<arguments>
+<arg>@{input}</arg>
+</arguments>
+<kw name="Set Variable" library="BuiltIn">
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<arguments>
+<arg>/getUserRepairTrainPlan</arg>
+</arguments>
+<assign>
+<var>${path}</var>
+</assign>
+<msg timestamp="20190111 17:49:26.836" level="INFO">${path} = /getUserRepairTrainPlan</msg>
+<status status="PASS" starttime="20190111 17:49:26.836" endtime="20190111 17:49:26.836"></status>
+</kw>
+<kw name="Create Dictionary" library="BuiltIn">
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<assign>
+<var>${maps}</var>
+</assign>
+<msg timestamp="20190111 17:49:26.837" level="INFO">${maps} = {}</msg>
+<status status="PASS" starttime="20190111 17:49:26.837" endtime="20190111 17:49:26.837"></status>
+</kw>
+<kw name="Log" library="BuiltIn">
+<doc>Logs the given message with the given level.</doc>
+<arguments>
+<arg>======${training_URL}${path}</arg>
+</arguments>
+<msg timestamp="20190111 17:49:26.839" level="FAIL">Variable '${training_URL}' not found.</msg>
+<status status="FAIL" starttime="20190111 17:49:26.838" endtime="20190111 17:49:26.839"></status>
+</kw>
+<status status="FAIL" starttime="20190111 17:49:26.835" endtime="20190111 17:49:26.840"></status>
+</kw>
+<status status="FAIL" starttime="20190111 17:49:26.835" endtime="20190111 17:49:26.840"></status>
+</kw>
+<status status="FAIL" starttime="20190111 17:49:26.831" endtime="20190111 17:49:26.840"></status>
+</kw>
+<status status="FAIL" starttime="20190111 17:49:26.831" endtime="20190111 17:49:26.840"></status>
+</kw>
+<timeout value="30 seconds"></timeout>
+<status status="FAIL" starttime="20190111 17:49:26.827" endtime="20190111 17:49:26.840"></status>
+</kw>
+<status status="FAIL" starttime="20190111 17:49:26.826" endtime="20190111 17:49:26.840"></status>
+</kw>
+<doc>getUserRepairTrainPlan TestCase测试用例</doc>
+<tags>
+<tag>Online</tag>
+<tag>Test</tag>
+<tag>txy</tag>
+</tags>
+<status status="FAIL" starttime="20190111 17:49:26.825" endtime="20190111 17:49:26.841" critical="yes">Variable '${training_URL}' not found.</status>
+</test>
+<doc>getUserRepairTrainPlan 获取用户当前时间内是否有补完成登记记录</doc>
+<status status="FAIL" starttime="20190111 17:49:26.551" endtime="20190111 17:49:26.841"></status>
+</suite>
+<statistics>
+<total>
+<stat pass="0" fail="1">Critical Tests</stat>
+<stat pass="0" fail="1">All Tests</stat>
+</total>
+<tag>
+<stat pass="0" fail="1">Online</stat>
+<stat pass="0" fail="1">Test</stat>
+<stat pass="0" fail="1">txy</stat>
+</tag>
+<suite>
+<stat pass="0" fail="1" id="s1" name="getUserRepairTrainPlan Post">getUserRepairTrainPlan Post</stat>
+</suite>
+</statistics>
+<errors>
+<msg timestamp="20190111 17:49:26.548" level="ERROR">Variable file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcodePublicJoyrunOnline_var.py' does not exist.</msg>
+<msg timestamp="20190111 17:49:26.624" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/public_lib.txt': Importing test library 'RequestsLibrary' failed: ModuleNotFoundError: No module named 'RequestsLibrary'
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.625" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/public_lib.txt': Importing test library 'DatabaseLibrary' failed: ModuleNotFoundError: No module named 'DatabaseLibrary'
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.634" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/public_lib.txt': Importing test library 'HttpLibrary.HTTP' failed: ModuleNotFoundError: No module named 'HttpLibrary'
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.637" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/public_lib.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tools_library.py' failed: SyntaxError: invalid syntax (tools_library.py, line 336)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.638" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/public_lib.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/Usertool_01.py' failed: SyntaxError: Missing parentheses in call to 'print'. Did you mean print('os type is:',ostype)? (Usertool_01.py, line 24)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.639" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/public_lib.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tool_reptile.py' failed: SyntaxError: Missing parentheses in call to 'print'. Did you mean print(dataobj1)? (tool_reptile.py, line 18)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.647" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/public_lib.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/Verification_Field.py' failed: NameError: name 'reload' is not defined
+Traceback (most recent call last):
+  File "/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/Verification_Field.py", line 11, in &lt;module&gt;
+    reload(sys)
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.648" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/public_lib.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/Verification.py' failed: TabError: inconsistent use of tabs and spaces in indentation (Verification.py, line 81)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.693" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/business/thejoyrun.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tool_reptile.py' failed: SyntaxError: Missing parentheses in call to 'print'. Did you mean print(dataobj1)? (tool_reptile.py, line 18)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.696" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/business/thejoyrun.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tools_library.py' failed: SyntaxError: invalid syntax (tools_library.py, line 336)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.707" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/OtherMethod/cookie_operation.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tools_library.py' failed: SyntaxError: invalid syntax (tools_library.py, line 336)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.735" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Public/http_request.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tool_reptile.py' failed: SyntaxError: Missing parentheses in call to 'print'. Did you mean print(dataobj1)? (tool_reptile.py, line 18)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.738" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Public/http_request.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tools_library.py' failed: SyntaxError: invalid syntax (tools_library.py, line 336)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.738" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Public/http_request.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/Usertool_01.py' failed: SyntaxError: Missing parentheses in call to 'print'. Did you mean print('os type is:',ostype)? (Usertool_01.py, line 24)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.763" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/business/jrtool.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tool_reptile.py' failed: SyntaxError: Missing parentheses in call to 'print'. Did you mean print(dataobj1)? (tool_reptile.py, line 18)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.766" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/business/jrtool.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tools_library.py' failed: SyntaxError: invalid syntax (tools_library.py, line 336)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.818" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/business/joyrunbusiness.txt': Importing test library '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Lib/tools_library.py' failed: SyntaxError: invalid syntax (tools_library.py, line 336)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+<msg timestamp="20190111 17:49:26.820" level="ERROR">Error in file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/public_lib.txt': Processing variable file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Config.py' failed: Importing variable file '/usr/local/Django/PYthon_Public/joyrun/background/thejoyrunTestcode/Public/Config.py' failed: SyntaxError: Missing parentheses in call to 'print'. Did you mean print('os type is:',ostype)? (Config.py, line 26)
+Traceback (most recent call last):
+  None
+PYTHONPATH:
+  /usr/local/bin
+  /usr/local/lib/python36.zip
+  /usr/local/lib/python3.6
+  /usr/local/lib/python3.6/lib-dynload
+  /usr/local/lib/python3.6/site-packages</msg>
+</errors>
+</robot>

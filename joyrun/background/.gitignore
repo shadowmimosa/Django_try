@@ -1,0 +1,14 @@
+/.git/
+/.idea/
+/.settings/
+/.vscode/
+/libspecs/
+/.metadata/
+/report.html
+/log.html
+/output.xml
+/itchat.pkl
+*.png
+/Enjoytherun.sublime-workspace
+/run.log
+/venv/
