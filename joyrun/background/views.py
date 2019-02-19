@@ -321,9 +321,9 @@ def report_check(request, pagenum):
     folder_name = TestReports.objects.get(id=pagenum).reports
 
     if 'report_check' and 'log.html' in request.get_full_path():
-        file_name = folder_name + "\\log.html"
+        file_name = folder_name + "/log.html"
     else:
-        file_name = folder_name + "\\report.html"
+        file_name = folder_name + "/report.html"
 
     def readFile(fn, buf_size=262144):
         print(os.getcwd())
