@@ -26,10 +26,7 @@ def pybot_command(file_path, env='test'):
     date_num = start_time[0]
     clock_num = start_time[-1].replace(':', '-')
     
-    if platform.system() == "Windows":
-        report_path = 'C:\\Users\\ShadowMimosa\\Documents\\STU\Top\\ForDjango\\joyrun\\background\\reports\\' + date_num + '\\' + clock_num
-    elif platform.system() == "Linux":
-        report_path = './' + date_num + '/' + clock_num
+    report_path = './background/reports' + date_num + '/' + clock_num
     
     # setting 中变量并不可用
     # if DEBUG:
