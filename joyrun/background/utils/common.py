@@ -48,7 +48,7 @@ def newly_testcase(tests_all, path):
                 submitted_personnel='Admin',
                 simple_desc='接口测试项目',
                 file_path=root)
-            print("Wrinting ProjectInfo to database is down.)
+            print("Wrinting ProjectInfo to database is down.")
 
         pro = ProjectInfo.objects.get(project_name=key)
         for keys, values in tests_all[key].items():
@@ -60,7 +60,7 @@ def newly_testcase(tests_all, path):
                     simple_desc='该模块测试用例集合',
                     belong_project=pro,
                     file_path=folder)
-                print("Wrinting ModuleInfo to database is down.)
+                print("Wrinting ModuleInfo to database is down.")
             mod = ModuleInfo.objects.get(module_name=keys)
             for index in values:
                 files = os.path.join(folder, index)
@@ -75,7 +75,7 @@ def newly_testcase(tests_all, path):
                         request='default',
                         belong_module=mod,
                         file_path=files)
-                    print("Wrinting TestcaseInfo to database is down.)
+                    print("Wrinting TestcaseInfo to database is down.")
 
 
 def update_testcase():
