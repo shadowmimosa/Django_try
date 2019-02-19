@@ -349,7 +349,12 @@ def image(request):
 # path = 'D:\\test\\JoyrunTestOA\\thejoyrunTestcode'
 # initial_testcase(os.path.relpath(path))
 
-path = './background/thejoyrunTestcode'
-initial_testcase(os.path.abspath(path))
+import platform, os
 
+system_version = platform.system()
+if system_version == "Windows":
+    path = 'D:\\test\\JoyrunTestOA\\thejoyrunTestcode'
+elif system_version == "Linux":
+    path = './background/thejoyrunTestcode'
+initial_testcase(os.path.abspath(path))
 print("---> It's in initial database now.")
