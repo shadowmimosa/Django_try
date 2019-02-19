@@ -31,7 +31,7 @@ def pybot_command(file_path, env='test'):
     elif platform.system() == "Linux":
         report_path = './' + date_num + '/' + clock_num
     
-    if Debug:
+    if DEBUG:
         print("Debug is here now!")
         
     subprocess.call(command + report_path + '\t' + file_path, shell=True)
