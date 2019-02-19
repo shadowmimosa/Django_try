@@ -20,14 +20,20 @@ def pybot_command(file_path, env='test'):
     else:
         return HttpResponse("It's something wrong")
 
-    import subprocess
-    import time
+    import subprocess, time, platform
 
     start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()).split()
     date_num = start_time[0]
     clock_num = start_time[-1].replace(':', '-')
-
-    report_path = 'C:\\Users\\ShadowMimosa\\Documents\\STU\Top\\ForDjango\\joyrun\\background\\reports\\' + date_num + '\\' + clock_num
+    
+    if platform.system() == "Windows":
+        report_path = 'C:\\Users\\ShadowMimosa\\Documents\\STU\Top\\ForDjango\\joyrun\\background\\reports\\' + date_num + '\\' + clock_num
+    elif platform.system() == "Linux":
+        report_path = './' + date_num + '/' + clock_num
+    
+    if Debug:
+        print("Debug is here now!")
+        
     subprocess.call(command + report_path + '\t' + file_path, shell=True)
 
     reports = {
