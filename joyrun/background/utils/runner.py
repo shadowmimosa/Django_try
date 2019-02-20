@@ -26,7 +26,7 @@ def pybot_command(file_path, env='test'):
     date_num = start_time[0]
     clock_num = start_time[-1].replace(':', '-')
     
-    report_path = '/home/apps/reports' + date_num + '/' + clock_num
+    report_path = '/home/apps/reports/' + date_num + '/' + clock_num
     
     # setting 中变量并不可用
     # if DEBUG:
