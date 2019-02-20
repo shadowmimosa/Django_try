@@ -10,7 +10,7 @@ def pybot_command(file_path, env='test'):
 
     project_path = ProjectInfo.objects.get(
         project_name='thejoyrunTestcode').file_path
-    var_path = project_path + "\\Public\\JoyrunOnline_var.py"
+    var_path = project_path + "/Public/JoyrunOnline_var.py"
 
     if env == 'test':
         command = "pybot --include Test  --variable  JoyrunEvn:Test    -d "
@@ -26,7 +26,7 @@ def pybot_command(file_path, env='test'):
     date_num = start_time[0]
     clock_num = start_time[-1].replace(':', '-')
     
-    report_path = '../reports' + date_num + '/' + clock_num
+    report_path = '/home/apps/reports' + date_num + '/' + clock_num
     
     # setting 中变量并不可用
     # if DEBUG:
