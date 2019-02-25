@@ -160,7 +160,8 @@ def get_pager_info(Model, filter_query, url, id, per_items=12):
                         author__contains=user)
 
     if url != '/api/periodictask/':
-        obj = obj.order_by('-update_time')
+        # obj = obj.order_by('-update_time')
+        obj = obj.order_by('module_name')
         total = obj.count()
 
     else:
