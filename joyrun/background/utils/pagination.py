@@ -169,7 +169,7 @@ def get_pager_info(Model, filter_query, url, id, per_items=12):
 
     # else:
     #     obj = obj.order_by('-date_changed')
-    if url == "testcase_list/":
+    if "testcase_list/" in url:
         obj = obj.order_by('name')
 
     total = obj.count()
