@@ -8,13 +8,15 @@ from ..models import ProjectInfo, ModuleInfo, TestCaseInfo
 
 
 def get_testcase(path):
+    import collections
     from background.utils import global_varibale as gl
+
     if gl.get_value("system") == "Windows":
         symbol = "\\"
     else:
         symbol = "/"
 
-    testcase = {}  # 初始化用例集合
+    testcase = collections.OrderedDict()  # 初始化用例集合
     foldername = path.split(symbol)[-1]  # 用例文件夹名
     testcase[foldername] = {}  # 用例集合
 
@@ -55,7 +57,8 @@ def newly_testcase(tests_all, path):
         pro = ProjectInfo.objects.get(project_name=key)
         for keys, values in tests_all[key].items():
             folder = os.path.join(path, keys)
-            if ModuleInfo.objects.get_module_name(keys) < 1:
+            if ModuleInfo.objects.get_module_name(
+                    keys) < 1 and 'Public' not in keys:
                 ModuleInfo.objects.insert_module(
                     module_name=keys,
                     test_user='Admin',
