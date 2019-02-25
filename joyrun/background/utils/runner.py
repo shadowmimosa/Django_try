@@ -50,7 +50,9 @@ def pybot_command(file_path, env='test'):
         file_path,
         report_path,
     )
-    subprocess.call("/home/apps/.local/share/virtualenvs/joyrun-s4DpRjB1/bin/activate")
+    subprocess.call(
+        "/home/apps/.local/share/virtualenvs/joyrun-s4DpRjB1/bin/activate",
+        shell=True)
     subprocess.call(new_command, shell=True)
 
     reports = {
