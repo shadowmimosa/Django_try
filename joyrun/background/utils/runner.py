@@ -20,7 +20,7 @@ def pybot_command(file_path, env='test'):
     else:
         return HttpResponse("It's something wrong")
 
-    import subprocess, time, platform
+    import subprocess, time, platform, os
 
     start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()).split()
     date_num = start_time[0]
@@ -29,8 +29,6 @@ def pybot_command(file_path, env='test'):
     from background.utils import global_varibale as gl
 
     if gl.get_value("system") == "Windows":
-        import os
-
         symbol = "\\"
         rootpath = str(os.getcwd())
         report_path = rootpath + "\\background\\reports\\{}\\{}".format(

@@ -8,35 +8,31 @@ from ..models import ProjectInfo, ModuleInfo, TestCaseInfo
 
 
 def get_testcase(path):
-    Json_D = {}
-
-    if '/' in path:
-        foldername = path.split('/')[-1]
-        # path.replace('/', '\\')
+    from background.utils import global_varibale as gl
+    if gl.get_value("system") == "Windows":
+        symbol = "\\"
     else:
-        foldername = path.split('\\')[-1]
+        symbol = "/"
 
-    Json_D[foldername] = {}
+    testcase = {}  # 初始化用例集合
+    foldername = path.split(symbol)[-1]  # 用例文件夹名
+    testcase[foldername] = {}  # 用例集合
 
     for root, dirs, files in os.walk(path):
-
-        if '/' in path:
-            root_folder = root.split('/')[-1]
-        else:
-            root_folder = root.split('\\')[-1]
+        root_folder = root.split(symbol)[-1]
 
         if root == path:
             for index in dirs:
                 if 'git' not in index:
-                    Json_D[foldername][index] = {}
+                    testcase[foldername][index] = {}
 
         elif len(root) > len(path):
-            if root_folder in Json_D[foldername].keys():
-                Json_D[foldername][root_folder] = files
-    
-    print("---> Finding testcases is down. The json is {}".format(Json_D))
+            if root_folder in testcase[foldername].keys():
+                testcase[foldername][root_folder] = files
 
-    return Json_D
+    print("---> Finding testcases is down. The json is {}".format(testcase))
+
+    return testcase
 
 
 def newly_testcase(tests_all, path):
@@ -49,6 +45,12 @@ def newly_testcase(tests_all, path):
                 simple_desc='接口测试项目',
                 file_path=root)
             print("Wrinting ProjectInfo to database is down.")
+        elif ProjectInfo.objects.get_pro_name(key) == 1:
+            pro = ProjectInfo.objects.get(project_name=key)
+            if pro.file_path != root:
+                pro.file_path = root
+                pro.save()
+                print("ProjectInfo is update.")
 
         pro = ProjectInfo.objects.get(project_name=key)
         for keys, values in tests_all[key].items():
@@ -61,6 +63,13 @@ def newly_testcase(tests_all, path):
                     belong_project=pro,
                     file_path=folder)
                 print("Wrinting ModuleInfo to database is down.")
+            elif ModuleInfo.objects.get_module_name(keys) == 1:
+                module = ModuleInfo.objects.get(module_name=keys)
+                if module.file_path != folder:
+                    module.folder_path = folder
+                    module.save()
+                    print("ModuleInfo is update.")
+
             mod = ModuleInfo.objects.get(module_name=keys)
             for index in values:
                 files = os.path.join(folder, index)
@@ -76,6 +85,12 @@ def newly_testcase(tests_all, path):
                         belong_module=mod,
                         file_path=files)
                     print("Wrinting TestcaseInfo to database is down.")
+                elif TestCaseInfo.objects.filter(name=index).count() == 1:
+                    testcase = TestCaseInfo.objects.get(name=index)
+                    if testcase.file_path != files:
+                        testcase.file_path = files
+                        testcase.save()
+                        print("TestcaseInfo is update")
 
 
 def update_testcase():
