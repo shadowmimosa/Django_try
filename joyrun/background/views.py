@@ -144,14 +144,15 @@ def index(request):
     test_length = TestCaseInfo.objects.filter(type__exact=1).count()
     suite_length = TestSuite.objects.count()
 
-    total = {
-        'pass': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 90, 60],
-        'fail': [90, 80, 70, 60, 50, 40, 30, 20, 10, 0, 10, 40],
-        'percent': [
-            10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0, 11.0,
-            20.0
-        ]
-    }
+    import random
+    pass_list, fail_list, percent_list = [], [], []
+    for index in range(12):
+        pass_list.append(random.randint(1, 393))
+        fail_list.append(393 - pass_list[index])
+        percent_list.append(
+            pass_list[index] / (pass_list[index] + fail_list[index]) * 100)
+
+    total = {'pass': pass_list, 'fail': fail_list, 'percent': percent_list}
     # total = get_total_values()
 
     manage_info = {
