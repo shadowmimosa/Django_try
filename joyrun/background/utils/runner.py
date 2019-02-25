@@ -25,14 +25,35 @@ def pybot_command(file_path, env='test'):
     start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()).split()
     date_num = start_time[0]
     clock_num = start_time[-1].replace(':', '-')
-    
-    report_path = '/home/apps/reports/' + date_num + '/' + clock_num
-    
-    # setting 中变量并不可用
-    # if DEBUG:
-    #     print("Debug is here now!")
-        
-    subprocess.call(command + report_path + '\t' + file_path, shell=True)
+
+    from background.utils import global_varibale as gl
+
+    if gl.get_value("system") == "Windows":
+        import os
+
+        symbol = "\\"
+        rootpath = str(os.getcwd())
+        report_path = rootpath + "\\background\\reports\\{}\\{}".format(
+            date_num, clock_num)
+    else:
+        symbol = "/"
+        report_path = '/home/apps/reports/' + date_num + '/' + clock_num
+    print("--->{}".format(file_path))
+    print("--->{}".format(file_path.split("thejoyrunTestcode")[0]))
+
+    # subprocess.call(command + report_path + '\t' + file_path, shell=True)
+
+    run_path = os.path.join(
+        file_path.split("thejoyrunTestcode")[0],
+        "thejoyrunTestcode{}Run.py".format(symbol))
+    new_command = "python {} {} {} {}".format(
+        run_path,
+        env,
+        file_path,
+        report_path,
+    )
+
+    subprocess.call(new_command, shell=True)
 
     reports = {
         'report_name': int(time.time()),

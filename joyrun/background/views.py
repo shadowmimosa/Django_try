@@ -318,12 +318,19 @@ def run_batch_test(request):
 @login_check
 def report_check(request, pagenum):
 
+    from background.utils import global_varibale as gl
+
     folder_name = TestReports.objects.get(id=pagenum).reports
 
-    if 'report_check' and 'log.html' in request.get_full_path():
-        file_name = folder_name + "/log.html"
+    if gl.get_value("system") == "Windows":
+        symbol = "\\"
     else:
-        file_name = folder_name + "/report.html"
+        symbol = "/"
+
+    if 'report_check' and 'log.html' in request.get_full_path():
+        file_name = folder_name + "{}log.html".format(symbol)
+    else:
+        file_name = folder_name + "{}report.html".format(symbol)
 
     def readFile(fn, buf_size=262144):
         print(os.getcwd())
@@ -349,13 +356,18 @@ def image(request):
 # path = 'D:\\test\\JoyrunTestOA\\thejoyrunTestcode'
 # initial_testcase(os.path.relpath(path))
 
-import platform
+# import platform
 
-system_version = platform.system()
+# system_version = platform.system()
+
+from .utils import global_varibale as gl
+
+system_version = gl.get_value("system")
+
 if system_version == "Windows":
-    path = 'D:\\test\\JoyrunTestOA\\thejoyrunTestcode'
+    path = './background/thejoyrunTestcode'
 elif system_version == "Linux":
     path = '/home/apps/thejoyrunTestcode/'
-    
+
 initial_testcase(os.path.abspath(path))
 print("---> It's in initial database now.")
