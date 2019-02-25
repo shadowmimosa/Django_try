@@ -53,9 +53,9 @@ def pybot_command(file_path, env='test'):
     # subprocess.call(
     #     "sudo /home/apps/.local/share/virtualenvs/joyrun-s4DpRjB1/bin/activate",
     #     shell=True)
-    subprocess.call("source /opt/py3.6/bin/activate")
+    subprocess.call("source /opt/py3.6/bin/activate", shell=True)
     subprocess.call(new_command, shell=True)
-    subprocess.call("deactivate")
+    subprocess.call("deactivate", shell=True)
 
     reports = {
         'report_name': int(time.time()),
