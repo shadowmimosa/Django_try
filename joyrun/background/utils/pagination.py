@@ -113,6 +113,8 @@ def get_pager_info(Model, filter_query, url, id, per_items=12):
         obj = obj.filter(project_name__contains=belong_project) if belong_project != 'All' \
             else obj.filter(submitted_personnel__contains=user)
 
+        obj = obj.order_by('project_name')
+
     elif 'module_list/' in url:
 
         if belong_project != 'All':
@@ -122,6 +124,8 @@ def get_pager_info(Model, filter_query, url, id, per_items=12):
         elif belong_module != '请选择':
             obj = obj.filter(module_name__contains=belong_module) if belong_module != 'All' \
                 else obj.filter(test_user__contains=user)
+
+        obj = obj.order_by('module_name')
 
     elif 'report_list/' in url:
         obj = obj.filter(report_name__contains=filter_query.get('report_name'))
@@ -159,13 +163,14 @@ def get_pager_info(Model, filter_query, url, id, per_items=12):
                     name__contains=name) if name is not '' else obj.filter(
                         author__contains=user)
 
-    if url != '/api/periodictask/':
-        # obj = obj.order_by('-update_time')
-        obj = obj.order_by('module_name')
-        total = obj.count()
+    # if url != '/api/periodictask/':
+    #     obj = obj.order_by('-update_time')
+    #     total = obj.count()
 
-    else:
-        obj = obj.order_by('-date_changed')
+    # else:
+    #     obj = obj.order_by('-date_changed')
+    if url == "testcase_list/":
+        obj = obj.order_by('name')
 
     total = obj.count()
 
