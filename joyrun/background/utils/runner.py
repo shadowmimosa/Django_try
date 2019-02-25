@@ -13,7 +13,7 @@ def pybot_command(file_path, env='test'):
     var_path = project_path + "/Public/JoyrunOnline_var.py"
 
     if env == 'test':
-        command = "robot --include Test  --variable  JoyrunEvn:Test    -d "
+        command = "pybot --include Test  --variable  JoyrunEvn:Test    -d "
     elif env == 'production':
         command = "pybot --include Online  --variable  JoyrunEvn:Online -V {} -d ".format(
             var_path)
@@ -39,7 +39,7 @@ def pybot_command(file_path, env='test'):
     print("--->{}".format(file_path))
     print("--->{}".format(file_path.split("thejoyrunTestcode")[0]))
 
-    subprocess.call(command + report_path + '\t' + file_path, shell=True)
+    # subprocess.call(command + report_path + '\t' + file_path, shell=True)
 
     run_path = os.path.join(
         file_path.split("thejoyrunTestcode")[0],
@@ -50,13 +50,12 @@ def pybot_command(file_path, env='test'):
         file_path,
         report_path,
     )
-    # # subprocess.call(
-    # #     "sudo /home/apps/.local/share/virtualenvs/joyrun-s4DpRjB1/bin/activate",
-    # #     shell=True)
-    # # subprocess.call("source /opt/py3.6/bin/activate", shell=True)
-    
-    # subprocess.call(new_command, shell=True)
-    # # subprocess.call("deactivate", shell=True)
+    # subprocess.call(
+    #     "sudo /home/apps/.local/share/virtualenvs/joyrun-s4DpRjB1/bin/activate",
+    #     shell=True)
+    # subprocess.call("source /opt/py3.6/bin/activate", shell=True)
+    subprocess.call(new_command, shell=True)
+    # subprocess.call("deactivate", shell=True)
 
     reports = {
         'report_name': int(time.time()),
