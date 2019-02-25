@@ -13,7 +13,7 @@ def pybot_command(file_path, env='test'):
     var_path = project_path + "/Public/JoyrunOnline_var.py"
 
     if env == 'test':
-        command = "pybot --include Test  --variable  JoyrunEvn:Test    -d "
+        command = "robot --include Test  --variable  JoyrunEvn:Test    -d "
     elif env == 'production':
         command = "pybot --include Online  --variable  JoyrunEvn:Online -V {} -d ".format(
             var_path)
