@@ -55,9 +55,13 @@ def newly_testcase(tests_all, path):
                 print("ProjectInfo is update.")
 
         pro = ProjectInfo.objects.get(project_name=key)
-        for keys, values in tests_all[key].items() and 'Public' not in keys:
+        for keys, values in tests_all[key].items() :
+            if 'Public' not in keys:
+                continue
+                
             folder = os.path.join(path, keys)
-            if ModuleInfo.objects.get_module_name(keys) < 1:
+            if ModuleInfo.objects.get_module_name(
+                    keys) < 1 :
                 ModuleInfo.objects.insert_module(
                     module_name=keys,
                     test_user='Admin',
