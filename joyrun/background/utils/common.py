@@ -25,11 +25,14 @@ def get_testcase(path):
 
         if root == path:
             for index in dirs:
-                if 'git' not in index:
+                if "git" not in index and "Public" not in index:
                     testcase[foldername][index] = {}
 
         elif len(root) > len(path):
             if root_folder in testcase[foldername].keys():
+                for values in files:
+                    if 'init' in values or 'git' in values or '.txt' not in values:
+                        files.remove(values)
                 testcase[foldername][root_folder] = files
 
     print("---> Finding testcases is down. The json is {}".format(testcase))
@@ -55,20 +58,20 @@ def newly_testcase(tests_all, path):
                 print("ProjectInfo is update.")
 
         pro = ProjectInfo.objects.get(project_name=key)
-        for keys, values in tests_all[key].items() :
-            if 'Public'  in keys:
+        for keys, values in tests_all[key].items():
+            if 'Public' in keys:
                 continue
 
             folder = os.path.join(path, keys)
-            if ModuleInfo.objects.get_module_name(
-                    keys) < 1 :
+            if ModuleInfo.objects.get_module_name(keys) < 1:
                 ModuleInfo.objects.insert_module(
                     module_name=keys,
                     test_user='Admin',
                     simple_desc='该模块测试用例集合',
                     belong_project=pro,
                     file_path=folder)
-                print("Wrinting ModuleInfo of {} to database is down.".format(keys))
+                print("Wrinting ModuleInfo of {} to database is down.".format(
+                    keys))
             elif ModuleInfo.objects.get_module_name(keys) == 1:
                 module = ModuleInfo.objects.get(module_name=keys)
                 if module.file_path != folder:
@@ -90,7 +93,8 @@ def newly_testcase(tests_all, path):
                         request='default',
                         belong_module=mod,
                         file_path=files)
-                    print("Wrinting TestcaseInfo of {} to database is down.".format(index))
+                    print("Wrinting TestcaseInfo of {} to database is down.".
+                          format(index))
                 elif TestCaseInfo.objects.filter(name=index).count() == 1:
                     testcase = TestCaseInfo.objects.get(name=index)
                     if testcase.file_path != files:
@@ -503,3 +507,290 @@ def return_msg(request, msg):
     request.session["login_status"] = False
     ret = {"msg": msg}
     return render(request, "background/login.html", ret)
+
+
+[('thejoyrunTestcode', {
+    'CrewAPI': [
+        'crew-user-crew_Post.txt', 'crew-event-list_Post.txt',
+        'crew-club-info_Post.txt', 'crew-search_Get.txt', 'crew-info_Post.txt',
+        'crew-event-detail_Post.txt', 'crew-club-avg-rank-last-week_Post.txt',
+        'crew-join-cancel_Post.txt', 'crew-discover_Post.txt',
+        'crew-join-quit_Post.txt', '__init__.txt', 'crew-club-update_Post.txt',
+        'crew-club-member_Post.txt', 'crew-recommend_Post.txt',
+        'crew-club-avg-rank-week_Post.txt'
+    ],
+    'equipmentapi': [
+        'saveUserCurrentEqpt_Post.txt', 'getUserEqptByType_Get.txt',
+        'getUserCurrentEqpt_Get.txt'
+    ],
+    'marathonapi': [
+        'marathon_online-mls-list_Post.txt', '__init__.txt',
+        'marathon_his-mls-list_Post.txt'
+    ],
+    'wearapi': [
+        'brand-shoe-search_Get.txt', 'user-shoe-meters-mark_Get.txt',
+        'starting-shoe-list_Post.txt', 'brand-shoe-hot-tag_Get.txt',
+        'shoe-multi-color-list_Get.txt', 'shoe-comment_Get.txt',
+        'user-shoe-add_Get.txt', 'user-shoe-color-set_Get.txt',
+        'user-shoe-retire_Get.txt', 'user-shoe-list_Post.txt',
+        'brand-shoe-list-tag_Get.txt', 'user-shoe-delete_Get.txt',
+        'brand-shoe-list_Post.txt', 'shoe-comment-pre-check_Get.txt',
+        'brand-list_Post.txt', 'shoe-comment-eval_Get.txt',
+        'user-shoe-remark-set_Get.txt', '__init__.txt',
+        'shoe-comment-list-hot_Post.txt', 'user-shoe-detail_Get.txt',
+        'user-shoe-meters-set_Get.txt', 'starting-shoe-detail_Get.txt',
+        'brand-shoe-detail_Post.txt', 'user-shoe-meters-mark-info_Get.txt',
+        'user-shoe-size-set_Get.txt', 'shoe-comment-list_Post.txt'
+    ],
+    'CrewappAPI': [
+        'crew_app_event_list_Post.txt', 'crew_event_cancle_app_Post.txt',
+        'crew-app-event-recommend-list_Post.txt',
+        'crew_event_new_app_Post.txt', '__init__.txt',
+        'crew-event-join-app_Post.txt', 'crew-event-detail-app_Get.txt'
+    ],
+    'beta': [
+        'api_ios_dynamic_config_do_Post.txt', '__init__.txt',
+        'api_dynamic_config_do_Post.txt'
+    ],
+    'eventapi': ['app_getUserEvents_Get.txt'],
+    'searchapi': [
+        'squareSearchByType_Get.txt', 'squareSearchByTypes_Get.txt',
+        'squareSearchAgg_Get.txt'
+    ],
+    'topicapi': [
+        'newTopic_topicDetail_Post.txt', 'newTopic_getBannerList_Get.txt',
+        'newTopic_getSquareAndRunDynamicTopic_Get.txt',
+        'newTopic_getChoicestArtideList_Get.txt',
+        'newTopic_getFourTopicList_Get.txt',
+        'newTopic_getHotsFeedList_Get.txt', '__init__.txt',
+        'newTopic_search_Get.txt', 'newTopic_getHotsFeedList_Post.txt',
+        'newTopic_getRunTopicConfigList_Get.txt',
+        'newTopic_getTopicList_Post.txt'
+    ],
+    'raceliveapi': [
+        'live_racesAndItems_Get.txt', 'live_race_recommend_Get.txt',
+        'live_races_Get.txt', 'live_races_count_Get.txt',
+        'live_raceItems_Get.txt', 'live_runner_Get.txt'
+    ],
+    'Public': ['http_request.txt', '__init__.txt'],
+    'mediaapi': [
+        'article-favor-add_Post.txt', 'article-get_Post.txt',
+        'subject-list-v1_Post.txt', 'article-list-v1_Post.txt',
+        'article-recommend-list_Post.txt', 'article-favor-list_Post.txt',
+        'article-comment-list_Post.txt', 'article-comment-eval_Post.txt',
+        'article-comment-list-hot_Post.txt', '__init__.txt',
+        'slide-list_Post.txt'
+    ],
+    'walletapi': [
+        'wallet_listUserTransDetails_Get.txt',
+        'wallet_withdrawRequest_Post.txt',
+        'wallet_getUserBalanceAmount_Get.txt',
+        'wallet_withdrawAccount_list_Get.txt',
+        'wallet_withdrawAccount_delete.txt', 'wallet_codeVerify_Get.txt',
+        'wallet_recharge_payResult_Get.txt', 'wallet_bind_post.txt',
+        'wallet_withdrawAccount_bind_Post.txt'
+    ],
+    'challengeAPI': [
+        'getActivity_Post.txt', 'challenge_list_Post.txt',
+        'challengeuser_getCompleteUsers_Post.txt',
+        'challenge_myChallenges_Get.txt',
+        'challenge_getActivityForPersonalRank_Post.txt',
+        'challengeuser_getCompleteUsersV2_Get.txt',
+        'challenge_getCompleteActivity_Get.txt',
+        'challengeuser_getAwardUsersV2_Get.txt',
+        'challengeuser_isAwardUser_Get.txt',
+        'challenge_getActivityInfo_Post.txt', '__init__.txt',
+        'challengeList_Get.txt', 'sign_Post.txt'
+    ],
+    'webevent':
+    ['weather_uv_Get.txt', 'weather_forecast_Get.txt', 'weather_air_Get.txt'],
+    'integrate': [
+        'register_Cell_Post.txt', 'updata_Run_record.txt',
+        'userAdd_Del_shoe_Post.txt', 'class_partin_pay_Post.txt',
+        'add_online_marathon_Get.txt', 'challengeuser_join_Post.txt',
+        'class_sponsor_pay_post.txt', 'feed_post_run_Post.txt',
+        'RunRecord_Online_Test.txt', '__init__.txt', 'run_delete_Post.txt'
+    ],
+    'Public_PY3': [
+        '__init__.py', 'Online.sh', 'JoyrunTestEnv_var.py',
+        'JoyrunOnline_var.py', 'Itchat_method.py', 'JoyrunBetaEnv_var.py',
+        '__init__.txt', 'Config.py', '.gitignore', 'public_lib.txt'
+    ],
+    'AdvertAPI': [
+        'advert-list_Post.txt', 'notify-list_Post.txt', '__init__.txt',
+        'hudong-list_Post.txt'
+    ],
+    'PointAPI': ['upnt-point-info_Post.txt', '__init__.txt'],
+    'trainingdubbox': ['pay_Get.txt', 'voicetraining_list-finish_Post.txt'],
+    'API': [
+        'friend_aspx_Post.txt', 'friendFeedListv5_aspx_Post.txt',
+        'dataMessages_Post.txt', 'runAppeal_incompleteCount_Get.txt',
+        'userBlacklist_checkAndSync_Get.txt', 'feed_check_run_Get.txt',
+        'race-calendar_race-search_Post.txt', 'run_update_coverImg_Post.txt',
+        'run_best_Post.txt', 'user_login_phonecode_get.txt',
+        'Run_SetPrivate_aspx_Post.txt', 'check_run_Post.txt',
+        'runAppeal_appealedRunList_Get.txt', 'userusersetting_asp_Post.txt',
+        'JoyRunMaster_Default_aspx_Post.txt', 'misc_geocoding_reverse_Get.txt',
+        'po_aspx_Post.txt', 'regdevicetoken_aspx_Post.txt',
+        'user_find_Get.txt', 'logout_aspx_Get.txt', 'weather_Post.txt',
+        'validate_otp_Post.txt', 'race-calendar_race-list_Post.txt',
+        'feedMessageList_Post.txt', 'validate_registered_Post.txt',
+        'user_aspx_Post.txt', 'rank_aspx_Post.txt',
+        'RunnerLevel_GetRunnerLevelDetail_aspx_Get.txt',
+        'runAppeal_canAppealRunList_Get.txt', 'resetpwd_aspx_Post.txt',
+        'daily_getDaily_Post.txt', 'user_userBrandLists_Get.txt',
+        'feed_getFriendFeedImgs_Post.txt', 'Run_GetInfo_aspx_Post.txt',
+        'userBlacklist_add_Post.txt', 'userInvitesv2_aspx_Post.txt',
+        'weather_Get.txt', 'user_getlist_aspx_Post.txt', 'run_delete_Get.txt',
+        'misc_sensitiveWords_check_Post.txt', 'video_getUploadSetting_Get.txt',
+        'register_fast_Post.txt', 'feed_post_run_Post.txt',
+        'phone_getVerificationCode_post.txt', 'usernote_aspx_Post.txt',
+        'userRunList_aspx_Post.txt', 'Run_SetPublic_aspx_Post.txt',
+        'misc_upload_addressBook_Post.txt', '__init__.txt',
+        'user_recommandUserBrands_Get.txt', 'feedListv5_aspx_Post.txt',
+        'Social_GetFeedRemind_aspx_Post.txt',
+        'user_runLevel_timeline_Post.txt', '.gitignore',
+        'citywide_aspx_Post.txt', 'feed_aspx_Post.txt',
+        'importPo_aspx_Post.txt',
+        'CellVerification_getCellVerificationCode_aspx_Post.txt',
+        'userBlacklist_remove_Post.txt', 'runLevel_timeline_Post.txt',
+        'oneclickdetails_aspx_Get.txt', 'oneclickdetails_aspx_Post.txt',
+        'runAppeal_add_Post.txt', 'userBlacklist_list_Get.txt',
+        'misc_qrCodeProcess_Post.txt', 'feed_feedListBasicBulk_POST.txt',
+        'feed_delete_Post.txt', 'feed_video_getUploadSetting_Post.txt',
+        'feed_recommandFeedId_Get.txt'
+    ],
+    'recommendapi': [
+        'link_from_invite_post.txt', 'recommend-users_Get.txt',
+        'wallet_ad_Get.txt', 'recommend-crews_Get.txt',
+        'push-user-cache_Get.txt'
+    ],
+    'mappapi': [
+        'getRankByPage_Post.txt', 'getMemberRunCale_Post.txt',
+        'wallet_getWalletByUid_Get.txt', 'bet_class_list_Post.txt',
+        'user_my_mission_Get.txt', 'getMemberCrewInfos_Post.txt',
+        'getMemberInfo_Post.txt', 'getMemberDayRank_Post.txt', '__init__.txt',
+        'getListByPage_Post.txt', 'getMemberChampionCount_Post.txt',
+        'user_class_info_Get.txt', 'class_detail_info_Get.txt',
+        'getByUid_cover_Post.txt'
+    ],
+    'Demo': [
+        'autotest.txt', 'Demo_Connect_Case.txt', 'Demo.txt', 'log.html',
+        'Demo_Get.txt', 'Demo_Postp.txt', 'output.xml', 'report.html',
+        'Demo_Postd.txt', '__init__.txt', 'Itchat.txt', '.gitignore',
+        'Demo_Get_nosign.txt', 'feedaddVideoPv.txt', 'faker_test.robot'
+    ],
+    'crew-muiltapi': [
+        'structure_getUserCrewLevel_Post.txt',
+        'crewRunStat_avgRunDistance_Get.txt', 'crew_crewApplyList_Post.txt',
+        'crewCreateApply_cancelApply_Get.txt',
+        'msgBoard_getMsgBoardList_Post.txt', 'getUserOnGoingApplyCrew_Get.txt',
+        'msgBoard_publish_Post.txt', 'crewRunStat_avgCheckin_Get.txt',
+        'structure-remove-Member_Post.txt',
+        'crewCreateApply_newApply_Post.txt',
+        'eventapp_crew-event-update-app_Post.txt',
+        'crewRunStat_avgRunPace_Get.txt',
+        'eventapp_crew-event-cancle-app_Post.txt',
+        'eventapp_getCrewEventList_Post.txt',
+        'crew_getUserOnGoingApplyCrew_Get.txt',
+        'structure_removeCrewAssstantAdmin_Post.txt',
+        'structure_removeNodeAdmin_Post.txt',
+        'structure_setCrewAssstantAdmin_Post.txt',
+        'user_getAllCrewMember_Get.txt', 'structure_memberManage_Post.txt',
+        'structure_updateCrewNodeInfo_post.txt',
+        'contribution_getUserWeekScore_Get.txt',
+        'eventapp_crew-app-event-list_Get.txt', 'rank_member_Get.txt',
+        'user_getNotCheckinList_Post.txt', 'structure_getCrewNode_Get.txt',
+        'rank_week_index_Get.txt',
+        'eventapp_crew-app-event-recommend-list_Get.txt',
+        'eventapp_getNewCrewEventApp_Post.txt', 'rank_week_index_Post.txt',
+        'crew_applyJoinCrew_Post.txt', 'structure_setNodeAdmin_Post.txt',
+        'contribution_rank_Get.txt', 'structure_getMyCrewInfo_Post.txt',
+        'eventapp_crew-event-new-app_Post.txt',
+        'eventapp_crew-event-join-list-app_Get.txt',
+        'crew_applyReview_Post.txt', 'crew_quitCrewLastMonth_Post.txt',
+        '__init__.txt', 'crewCreateApply_getUserLastApply_Get.txt',
+        'user_getCheckinList_Post.txt',
+        'crewRunStat_getCrewRunStatistics_Post.txt',
+        'eventapp_crew-event-detail-app_Get.txt',
+        'eventapp_crew-event-join-app_Post.txt',
+        'structure_getCrewInfo_Post.txt',
+        'contribution_getUserHistoryList_Post.txt',
+        'structure_searchCrewInfo_post.txt', 'crew_bottomNodeList_Post.txt',
+        'user_searchCrewMembers_Get.txt'
+    ],
+    'ec': [
+        'd4795834804a2b220a8fcf51d4089dce091ec8',
+        'eb4a078eca16bd286e5fb4d1ce0352a754aaa5',
+        '48848efffcca8283c4dd310203efaf7f583a60',
+        '9603b3567e8b7fec415162a9a6487e21d0d47b'
+    ],
+    'LiveApi': ['listOnlineLiveRace_Post.txt', '__init__.txt'],
+    'RdApi': [
+        'running_domain_apply_Post.txt', 'running_domain_detail_Post.txt',
+        'domain_checkin_ranking_30days_Post.txt',
+        'running_domain_disassociate_Post.txt',
+        'running_domain_supportcity_post.txt', 'running_domain_feed_Post.txt',
+        '__init__.txt', 'running_domain_list_Post.txt',
+        'running_domain_getByRun_Post.txt', 'domain_checkin_list_Post.txt'
+    ],
+    'uapi': [
+        'run_available_task_Get.txt', 'badge_getBadgeTypeTabSort_Post.txt',
+        'badge_getRecommendBdgBadge_Get.txt',
+        'badge_getBadgeByTypeAndBusinessId_Post.txt',
+        'badge_getRecentlyBadges_Post.txt',
+        'user_checkRealNameVerification_Get.txt',
+        'badge_getBadgeListByBadgeIds_Get.txt', '__init__.txt',
+        'badge_getBadgeSecondTypeList_Post.txt',
+        'badge_getBadgeListByUpdateTime_Post.txt',
+        'user_run_currentweeks_Post.txt', 'badge_getALLBadgeList_Post.txt'
+    ],
+    'betapi': [
+        'create_class_role_Get.txt', 'class_sponsorlist_Get.txt',
+        'class_list_Get.txt', 'class_rank_Get.txt', 'class_feed_list_Get.txt',
+        'Class_Create_Post.txt', 'user_partin_list_Get.txt',
+        'order_pay_result_Get.txt', 'user_class_diploma_Get.txt',
+        'stat_user_total_Get.txt', 'user_my_mission_Get.txt',
+        'user_advance_graduate_Post.txt', 'user_create_class_role_Get.txt',
+        'user_partin_listbytime_Get.txt', '__init__.txt',
+        'user_class_info_Get.txt', 'class_detail_info_Get.txt'
+    ],
+    'tripapi': [
+        'race_getRandomTripMotto_Get.txt', 'user_cancelSign_Post.txt',
+        'user_getUserWantRace_Post.txt', 'user_downLike_Post.txt',
+        'user_getUserInfo_Post.txt', 'race_listRaceHome_Get.txt',
+        'race_reasonIdGetRace_Get.txt', 'user_getUserRaceRunCount_Post.txt',
+        'race_getCategory_Get.txt', 'log.html', 'race_getHotComment_Get.txt',
+        'user_addUserComment_Post.txt', 'user_updateUserComment_Post.txt',
+        'race_getNewComment_Post.txt', 'user_getUserCommentAndRun_Post.txt',
+        'user_judgeBanding_Post.txt', 'output.xml',
+        'user_getUserCertainRaceWant_Post.txt', 'user_addUserWant_Post.txt',
+        'race_searchVisitRankRace_Get.txt',
+        'user_getUserRaceSignCount_Post.txt',
+        'race_reasonRaceIdByCertification_Get.txt', 'report.html',
+        'race_resonRaceIdGetEvent_Get.txt',
+        'user_getUserCanBandingUser_Post.txt', 'user_ypBandingWx_Post.txt',
+        'user_cancelWant_Post.txt', 'user_getUserRaceSign_Post.txt',
+        'listRaceHome_Get.txt', 'user_addUserRaceSign_Post.txt',
+        'race_getSearchParams_Get.txt', 'race_searchRecommendRankRace_Get.txt',
+        'user_delUserRaceCommentsOrRun_Post.txt',
+        'race_findUpcomingRace_Get.txt', 'user_getUserRaceNewComment_Post.txt',
+        'user_upLike_Post.txt', 'race_searchScoreRankRace_Get.txt'
+    ],
+    'trainingapi': [
+        'finishUserTrainPlanDetail_Post.txt', 'terminateTrainPlan_Post.txt',
+        'saveUserVoiceTraining_Post.txt', 'joinUserTrainPlan_Post.txt',
+        'listVoiceTrainingSectionWithPoints_Post.txt',
+        'getPlanDetails_Post.txt',
+        'listVoiceTrainingGroupByTrainingId_Post.txt',
+        'getUserRepairTrainPlan_Post.txt', 'getUserHisPlanDetail_Post.txt',
+        'showUserTrainPlanScheduling_Post.txt',
+        'listVoicePackageByTrainingId_Post.txt',
+        'getPlanCategoriesV2_Post.txt', 'listOnlineVoiceTraining_Post.txt',
+        'deleteTrainPlanHis_Post.txt', 'repairUserTrainPlanDetai_Post.txt',
+        '__init__.txt', 'getUserProceedTrainPlan_Post.txt',
+        'getPlansByCategoryId_Post.txt',
+        'getUserTrainPlanRunsByDateline_Post.txt',
+        'getUserHisTrainPlans_Post.txt'
+    ]
+})]
