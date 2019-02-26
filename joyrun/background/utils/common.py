@@ -19,6 +19,7 @@ def get_testcase(path):
     testcase = collections.OrderedDict()  # 初始化用例集合
     foldername = path.split(symbol)[-1]  # 用例文件夹名
     testcase[foldername] = {}  # 用例集合
+    ec_symbol = 0  # ec 文件夹标记
 
     for root, dirs, files in os.walk(path):
         root_folder = root.split(symbol)[-1]
@@ -29,8 +30,9 @@ def get_testcase(path):
                     testcase[foldername][index] = {}
 
         elif len(root) > len(path):
-            if root_folder == 'ec':
+            if root_folder == 'ec' and ec_symbol == 0:
                 print("---> The ec is {}".format(files))
+                ec_symbol = 1
             if root_folder in testcase[foldername].keys():
                 for values in files:
                     if 'init' in values or 'git' in values or '.txt' not in values:
