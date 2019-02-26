@@ -31,10 +31,14 @@ def get_testcase(path):
 
         elif len(root) > len(path):
             if root_folder == 'ec' and ec_symbol == 0:
+                print(files)
                 ec_symbol = 1
+
             if root_folder == 'ec' and ec_symbol == 1:
                 pass
             elif root_folder in testcase[foldername].keys():
+                if root_folder=='ec':
+                    print(files)
                 for values in files:
                     if 'init' in values or 'git' in values or '.txt' not in values:
                         files.remove(values)
@@ -707,10 +711,7 @@ def return_msg(request, msg):
         'structure_searchCrewInfo_post.txt', 'crew_bottomNodeList_Post.txt',
         'user_searchCrewMembers_Get.txt'
     ],
-    'ec': [
-        'eb4a078eca16bd286e5fb4d1ce0352a754aaa5',
-        '9603b3567e8b7fec415162a9a6487e21d0d47b'
-    ],
+    'ec': {},
     'LiveApi': ['listOnlineLiveRace_Post.txt'],
     'RdApi': [
         'running_domain_apply_Post.txt', 'running_domain_detail_Post.txt',
