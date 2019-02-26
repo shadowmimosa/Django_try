@@ -68,13 +68,13 @@ def newly_testcase(tests_all, path):
                     simple_desc='该模块测试用例集合',
                     belong_project=pro,
                     file_path=folder)
-                print("Wrinting ModuleInfo to database is down.")
+                print("Wrinting ModuleInfo of {} to database is down.".format(keys))
             elif ModuleInfo.objects.get_module_name(keys) == 1:
                 module = ModuleInfo.objects.get(module_name=keys)
                 if module.file_path != folder:
                     module.folder_path = folder
                     module.save()
-                    print("ModuleInfo is update.")
+                    print("ModuleInfo of {} is update.".format(keys))
 
             mod = ModuleInfo.objects.get(module_name=keys)
             for index in values:
@@ -90,13 +90,13 @@ def newly_testcase(tests_all, path):
                         request='default',
                         belong_module=mod,
                         file_path=files)
-                    print("Wrinting TestcaseInfo to database is down.")
+                    print("Wrinting TestcaseInfo of {} to database is down.".format(index))
                 elif TestCaseInfo.objects.filter(name=index).count() == 1:
                     testcase = TestCaseInfo.objects.get(name=index)
                     if testcase.file_path != files:
                         testcase.file_path = files
                         testcase.save()
-                        print("TestcaseInfo is update")
+                        print("TestcaseInfo of {} is update".format(index))
 
 
 def update_testcase():
