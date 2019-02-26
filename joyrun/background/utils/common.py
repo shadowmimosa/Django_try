@@ -30,7 +30,7 @@ def get_testcase(path):
 
         elif len(root) > len(path):
             if root_folder == 'ec':
-                print(files)
+                print("---> The ec is {}".format(files))
             if root_folder in testcase[foldername].keys():
                 for values in files:
                     if 'init' in values or 'git' in values or '.txt' not in values:
