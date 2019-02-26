@@ -35,6 +35,7 @@ def get_testcase(path):
                     if 'init' in values or 'git' in values or '.txt' not in values:
                         files.remove(values)
                 testcase[foldername][root_folder] = files
+                ec_symbol = 1
 
             if root_folder == 'ec' and ec_symbol == 1:
                 pass
