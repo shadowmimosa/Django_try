@@ -31,14 +31,14 @@ def get_testcase(path):
 
         elif len(root) > len(path):
             if root_folder == 'ec' and ec_symbol == 0:
-                print(files)
-                ec_symbol = 1
+                for values in files:
+                    if 'init' in values or 'git' in values or '.txt' not in values:
+                        files.remove(values)
+                testcase[foldername][root_folder] = files
 
             if root_folder == 'ec' and ec_symbol == 1:
                 pass
             elif root_folder in testcase[foldername].keys():
-                if root_folder=='ec':
-                    print(files)
                 for values in files:
                     if 'init' in values or 'git' in values or '.txt' not in values:
                         files.remove(values)
