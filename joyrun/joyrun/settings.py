@@ -95,6 +95,9 @@ if system_version == "Linux":
         }
     }
     STATIC_ROOT = os.path.join(BASE_DIR, "background/static/")
+    STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'background/static'),  # 静态文件额外目录
+    )
 
 elif system_version == "Windows":
     # Linux 服务器上远程用户
@@ -121,9 +124,9 @@ elif system_version == "Windows":
     STATIC_ROOT = os.path.join(BASE_DIR, "background\\static\\")
 
 
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'background/static'),  # 静态文件额外目录
-)
+    STATICFILES_DIRS = (
+        os.path.join(BASE_DIR, 'background/static'),  # 静态文件额外目录
+    )
 
 print(STATIC_ROOT)
 
