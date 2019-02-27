@@ -36,9 +36,9 @@ def pybot_command(file_path, env='test'):
     else:
         symbol = "/"
         report_path = '/home/apps/reports/' + date_num + '/' + clock_num
-        
-    subprocess.call("sudo mkdir {}".format(report_path))
 
+    os.makedirs(report_path)
+    
     print("--->{}".format(file_path))
     print("--->{}".format(file_path.split("thejoyrunTestcode")[0]))
 
