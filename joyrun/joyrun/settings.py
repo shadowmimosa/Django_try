@@ -94,6 +94,7 @@ if system_version == "Linux":
             'PORT': '3306',  # 监听端口 默认3306即可
         }
     }
+    STATIC_ROOT = os.path.join(BASE_DIR, "background/static/")
 
 elif system_version == "Windows":
     # Linux 服务器上远程用户
@@ -117,11 +118,14 @@ elif system_version == "Windows":
             'PORT': '3306',  # 监听端口 默认3306即可
         }
     }
+    STATIC_ROOT = os.path.join(BASE_DIR, "background\\static\\")
+
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'background/static'),  # 静态文件额外目录
 )
-STATIC_ROOT = os.path.join(BASE_DIR, "background/static/")
+
+print(STATIC_ROOT)
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
