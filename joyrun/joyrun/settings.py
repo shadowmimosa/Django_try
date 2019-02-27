@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = ')=%(%qpipuv(q*i%@is$9p_^@9riym63qxb-8bye_*+ntl%z&c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 # ALLOWED_HOSTS = ['10.99.1.221', '192.168.43.19', '127.0.0.1']
@@ -119,8 +119,9 @@ elif system_version == "Windows":
     }
 
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, '/joyrun/static'),  # 静态文件额外目录
+    os.path.join(BASE_DIR, 'background/static'),  # 静态文件额外目录
 )
+STATIC_ROOT = os.path.join(BASE_DIR, "background/static/")
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
