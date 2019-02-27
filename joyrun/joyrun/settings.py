@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = ')=%(%qpipuv(q*i%@is$9p_^@9riym63qxb-8bye_*+ntl%z&c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 # ALLOWED_HOSTS = ['10.99.1.221', '192.168.43.19', '127.0.0.1']
@@ -94,10 +94,10 @@ if system_version == "Linux":
             'PORT': '3306',  # 监听端口 默认3306即可
         }
     }
-    STATIC_ROOT = os.path.join(BASE_DIR, "background/static/")
-    # STATICFILES_DIRS = (
-    # os.path.join(BASE_DIR, 'background/static'),  # 静态文件额外目录
-    # )
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
+    STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'background/static/'),  # 静态文件额外目录
+    )
 
 elif system_version == "Windows":
     # Linux 服务器上远程用户
