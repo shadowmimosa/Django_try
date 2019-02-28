@@ -347,6 +347,12 @@ def report_check(request, pagenum):
     return HttpResponse(readFile(file_name))
 
 
+@login_check
+def tools(request):
+
+    return render(request, 'tools.html')
+
+
 def image(request):
 
     return HttpResponse("You're in my heart")
