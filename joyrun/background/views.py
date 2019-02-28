@@ -334,7 +334,6 @@ def report_check(request, pagenum):
         file_name = folder_name + "{}report.html".format(symbol)
 
     def readFile(fn, buf_size=262144):
-        print(os.getcwd())
         f = open(fn, "rb")
         while True:
             c = f.read(buf_size)
@@ -350,7 +349,7 @@ def report_check(request, pagenum):
 @login_check
 def tools(request):
 
-    return render(request, 'tools.html')
+    return render(request, 'background/tools.html')
 
 
 def image(request):

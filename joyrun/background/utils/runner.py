@@ -1,7 +1,10 @@
 from django.http import HttpResponse
 from ..models import ProjectInfo, TestReports
 
+import subprocess, time, platform, os, sys
+
 from background.utils import global_varibale as gl
+
 
 def pybot_command(file_path, env='test'):
     '''
@@ -21,13 +24,9 @@ def pybot_command(file_path, env='test'):
     else:
         return HttpResponse("It's something wrong")
 
-    import subprocess, time, platform, os
-
     start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()).split()
     date_num = start_time[0]
     clock_num = start_time[-1].replace(':', '-')
-
-
 
     if gl.get_value("system") == "Windows":
         symbol = "\\"
@@ -54,25 +53,21 @@ def pybot_command(file_path, env='test'):
 
     # subprocess.call(new_command, shell=True)
 
-    run_robot("{} {} {}".format(command, report_path, file_path))
+    status = run_robot("{} {} {}".format(command, report_path, file_path))
 
     reports = {
         'report_name': int(time.time()),
         'status': 1,
-        'successes': 1,
+        'successes': status,
         'testsRun': 1,
         'start_at': start_time,
         'reports': report_path
     }
-    TestReports.objects.create(**reports)
-    pagenum = TestReports.objects.get(reports=report_path).id
 
-    return pagenum
+    return TestReports.objects.create(**reports).id
 
 
 def run_robot(robot_cmd):
-    import sys, os, platform
-
     # run.py  test  api,advertapi   e:/log   JoyrunEvn:Beta
     # system discrimination
     ostype = sys.platform
@@ -80,9 +75,9 @@ def run_robot(robot_cmd):
     home = os.path.dirname(os.path.abspath(__file__))
 
     if gl.get_value("system") == "Windows":
-        home=os.path.join(os.path.dirname(home),"thejoyrunTestcode")
+        home = os.path.join(os.path.dirname(home), "thejoyrunTestcode")
     else:
-        home="/home/apps/thejoyrunTestcode"
+        home = "/home/apps/thejoyrunTestcode"
 
     print('Home=={}'.format(home))
 
@@ -208,12 +203,43 @@ def run_robot(robot_cmd):
         '*********************      Script  Run   start ...      *********************'
     )
     # rzlist = os.popen(robot_cmd).read().split('\n')
-    rz = os.popen(robot_cmd)
-    rzline = rz.readline()
-    while rzline:
-        print(rzline)
-        rzline = rz.readline()
-    rz.close()
+    # rz = os.popen(robot_cmd)
+    # rzline = rz.readline()
+    # while rzline:
+    #     print(rzline)
+    #     rzline = rz.readline()
+    # rz.close()
+
+    # p = subprocess.run(
+    #     robot_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # out = p.stdout.decode('utf-8').split('\r')
+
+    cmd_list = []
+
+    p = subprocess.Popen(
+        robot_cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+        encoding='utf-8')
+
+    while p.poll() is None:
+        out = p.stdout.readline()
+        print(out)
+        cmd_list.append(out)
+
+    for value in cmd_list[::-1]:
+        if "tests total" in value:
+            if '0' in value.split(','):
+                status = 1
+            else:
+                status = 0
+            break
+
+    # out=p.stdout.readlines()
+    # for values in out:
+    #     print("--->%s", values)
 
     # Check folder name, and rename again.
     if os.path.exists(os.path.join(home, 'Public_PY2')):
@@ -229,3 +255,5 @@ def run_robot(robot_cmd):
     print(
         '*********************     Script   The    End!!!        *********************'
     )
+
+    return status
