@@ -8,6 +8,12 @@ verify_ssl = true
 [packages]
 django = "*"
 mysqlclient = "*"
+robotframework = "*"
+robotframework-requests = "*"
+robotframework-databaselibrary = "*"
+pymysql = "*"
+jsonpointer = "*"
+uwsgi = "*"
 
 [requires]
 python_version = "3.6"
