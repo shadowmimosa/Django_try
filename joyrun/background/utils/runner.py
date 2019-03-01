@@ -230,7 +230,7 @@ def run_robot(robot_cmd):
         cmd_list.append(out)
 
     for value in cmd_list[::-1]:
-        if "tests total" in value:
+        if "tests total" in value or "test total" in value:
             if '0' in value.split(','):
                 status = 1
             else:
