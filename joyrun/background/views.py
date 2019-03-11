@@ -26,7 +26,6 @@ def login_check(func):
 
     return wrapper
 
-
 @csrf_exempt
 def login(request):
     """
@@ -333,7 +332,7 @@ def report_check(request, pagenum):
     else:
         file_name = folder_name + "{}report.html".format(symbol)
 
-    def readFile(fn, buf_size=262144):
+    def read_file(fn, buf_size=262144):
         f = open(fn, "rb")
         while True:
             c = f.read(buf_size)
@@ -343,7 +342,7 @@ def report_check(request, pagenum):
                 break
         f.close()
 
-    return HttpResponse(readFile(file_name))
+    return HttpResponse(read_file(file_name))
 
 
 @login_check
