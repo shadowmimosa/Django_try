@@ -45,7 +45,8 @@ def get_testcase(path):
                         files.remove(values)
                 testcase[foldername][root_folder] = files
 
-    print("---> Finding testcases is down. The json is {}".format(testcase))
+    print("---> Finding testcases is down. The json is {}".format(testcase)) # 非调试不需要输出
+    print("---> Finding testcases is down.")
 
     return testcase
 
