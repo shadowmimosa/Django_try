@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = ')=%(%qpipuv(q*i%@is$9p_^@9riym63qxb-8bye_*+ntl%z&c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 # ALLOWED_HOSTS = ['10.99.1.221', '192.168.43.19', '127.0.0.1']
@@ -88,9 +88,9 @@ if system_version == "Linux":
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'yp_testos',  # 新建数据库名
+            'NAME': 'testos',  # 新建数据库名
             'USER': 'root',  # 数据库登录名
-            'PASSWORD': 'JoyrunTest@123',  # 数据库登录密码
+            'PASSWORD': 'BuleCook@556',  # 数据库登录密码
             'HOST': '127.0.0.1',  # 数据库所在服务器ip地址
             'PORT': '3306',  # 监听端口 默认3306即可
         }
